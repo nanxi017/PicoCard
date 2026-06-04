@@ -1,4 +1,4 @@
-// - 核心理由：系統唯一的畫面渲染與互動管理器，以頂部固定控制區承載品牌、身份與主操作導覽，將第 3 欄「新增」作為直接喚起新增面板的黃金中鍵。
+// - 核心理由：系統唯一的畫面渲染與互動管理器，以手機安全的 App Shell 固定頂部控制區，承載品牌、身份與主操作導覽，將第 3 欄「新增」作為直接喚起新增面板的黃金中鍵。
 // - 權責邊界：[負責] 操控 DOM、處理中鍵點擊直接調用 openSheet()、彈出原子確認盒、提示 Toast、管理留言監聽釋放。 [不負責] 直接呼叫資料庫 API。
 // - MWE：在 index.html 載入後，配合 DOM 元素進行介面渲染。
 // - 致命錯誤邊界：卡片重繪時必須嚴格釋放舊留言的即時監聽（onSnapshot），否則累積的 Listener 將導致瀏覽器記憶體洩漏當機，此處使用 noteUnsubscribers 完全規避，風險受控。
@@ -56,8 +56,8 @@ function ensureFinalTopDockLayout() {
   style.textContent = `
     :root { --top-safe: env(safe-area-inset-top, 0px); }
     #finalTopDock {
-      position: sticky;
-      top: 0;
+      position: relative !important;
+      flex: 0 0 auto !important;
       z-index: 1000;
       background: var(--bg, #eef6ff);
       padding: calc(8px + var(--top-safe)) 10px 8px;
@@ -92,10 +92,22 @@ function ensureFinalTopDockLayout() {
       flex-wrap: wrap;
     }
     #finalTopDock #userBadge {
-      max-width: 150px;
+      max-width: 180px;
       overflow: hidden;
       white-space: nowrap;
       text-overflow: ellipsis;
+      background: #0f766e !important;
+      color: #ffffff !important;
+      border: 1px solid rgba(15, 118, 110, .35) !important;
+      box-shadow: 0 2px 8px rgba(15, 118, 110, .20);
+      opacity: 1 !important;
+    }
+    #finalTopDock #infoBtn,
+    #finalTopDock #logoutBtn {
+      background: #ffffff !important;
+      color: #0f172a !important;
+      border: 1px solid var(--line, #dbe5ee) !important;
+      opacity: 1 !important;
     }
     #finalTopDock #bottomNav {
       position: static !important;
@@ -139,11 +151,21 @@ function ensureFinalTopDockLayout() {
       top: auto !important;
       z-index: auto !important;
     }
-    #content {
-      padding: 12px 12px calc(16px + var(--bottom, 0px)) !important;
-    }
     #mainApp {
+      display: flex !important;
+      flex-direction: column !important;
+      height: 100dvh !important;
+      min-height: 0 !important;
+      overflow: hidden !important;
       padding-bottom: 0 !important;
+    }
+    #content {
+      flex: 1 1 auto !important;
+      min-height: 0 !important;
+      overflow-y: auto !important;
+      -webkit-overflow-scrolling: touch !important;
+      overscroll-behavior: contain !important;
+      padding: 12px 12px calc(16px + var(--bottom, 0px)) !important;
     }
     #mainApp > header.appbar {
       display: none !important;
@@ -182,6 +204,40 @@ function ensureFinalTopDockLayout() {
     }
     .cardActionRow button.danger { color: var(--red, #dc2626); }
     .cardActionRow button.manage { color: var(--purple, #6d28d9); }
+    @media (max-width: 480px) {
+      #finalTopDock {
+        padding: calc(7px + var(--top-safe)) 8px 7px;
+      }
+      #finalTopDock .finalTopRow {
+        grid-template-columns: 1fr;
+        gap: 6px;
+        margin-bottom: 7px;
+      }
+      #finalTopDock .finalIdentity {
+        justify-content: flex-start;
+      }
+      #finalTopDock .finalBrandTitle {
+        font-size: 18px;
+      }
+      #finalTopDock .finalBrandSub {
+        font-size: 11.5px;
+      }
+      #finalTopDock #userBadge {
+        max-width: min(220px, 62vw);
+      }
+      #finalTopDock #bottomNav {
+        gap: 5px !important;
+      }
+      #finalTopDock #bottomNav .navBtn {
+        min-height: 44px;
+        height: 44px;
+        border-radius: 14px;
+        font-size: 10.5px;
+      }
+      #finalTopDock #bottomNav .navBtn b {
+        font-size: 19px;
+      }
+    }
     @media (max-width: 380px) {
       #finalTopDock .finalBrandTitle { font-size: 18px; }
       #finalTopDock #bottomNav .navBtn { font-size: 10px; }
@@ -215,7 +271,7 @@ function ensureFinalTopDockLayout() {
   topDock.appendChild(dom.bottomNav);
   dom.mainApp.prepend(topDock);
 
-  // 舊 appbar 由 runtime CSS 整體隱藏；identity 元素已移入 finalTopDock，避免雙重 sticky 頂部區。
+  // 舊 appbar 由 runtime CSS 整體隱藏；identity 元素已移入 finalTopDock，避免雙重頂部區。
 }
 
 function runCardAction(action, card) {
