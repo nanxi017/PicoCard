@@ -1,4 +1,4 @@
-// - 核心理由：系統唯一的畫面渲染與互動管理器，全面移除 FAB DOM 快取，將底部導覽列第 3 欄重構為直接喚起新增面板的黃金中鍵。
+// - 核心理由：系統唯一的畫面渲染與互動管理器，以頂部固定控制區承載品牌、身份與主操作導覽，將第 3 欄「新增」作為直接喚起新增面板的黃金中鍵。
 // - 權責邊界：[負責] 操控 DOM、處理中鍵點擊直接調用 openSheet()、彈出原子確認盒、提示 Toast、管理留言監聽釋放。 [不負責] 直接呼叫資料庫 API。
 // - MWE：在 index.html 載入後，配合 DOM 元素進行介面渲染。
 // - 致命錯誤邊界：卡片重繪時必須嚴格釋放舊留言的即時監聽（onSnapshot），否則累積的 Listener 將導致瀏覽器記憶體洩漏當機，此處使用 noteUnsubscribers 完全規避，風險受控。
@@ -139,8 +139,14 @@ function ensureFinalTopDockLayout() {
       top: auto !important;
       z-index: auto !important;
     }
+    #content {
+      padding: 12px 12px calc(16px + var(--bottom, 0px)) !important;
+    }
     #mainApp {
       padding-bottom: 0 !important;
+    }
+    #mainApp > header.appbar {
+      display: none !important;
     }
     .cardActionDetails {
       margin-top: 10px;
@@ -193,8 +199,8 @@ function ensureFinalTopDockLayout() {
   const brand = document.createElement("div");
   brand.className = "finalBrand";
   brand.innerHTML = `
-    <div class="finalBrandTitle">一起辦</div>
-    <div class="finalBrandSub">卡片協作工具</div>
+    <div class="finalBrandTitle">一起辦｜卡片協作工具</div>
+    <div class="finalBrandSub">共同任務，完成與收起需先行確認。</div>
   `;
 
   const identity = document.createElement("div");
@@ -209,9 +215,7 @@ function ensureFinalTopDockLayout() {
   topDock.appendChild(dom.bottomNav);
   dom.mainApp.prepend(topDock);
 
-  // 隱藏舊標題文字，避免與新名稱重複；只隱藏未被移入 finalTopDock 的第一個 h1。
-  const legacyTitle = Array.from(document.querySelectorAll("h1")).find(h => !topDock.contains(h));
-  if (legacyTitle) legacyTitle.style.display = "none";
+  // 舊 appbar 由 runtime CSS 整體隱藏；identity 元素已移入 finalTopDock，避免雙重 sticky 頂部區。
 }
 
 function runCardAction(action, card) {
