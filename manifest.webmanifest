@@ -1,12 +1,7 @@
-// - 核心理由：向作業系統聲明 PWA 屬性，實現獨立視窗啟動、隱藏瀏覽器網址列、定義主題顏色。
-// - 權責邊界：[負責] 宣告 PWA 名稱、啟動 URL、圖標路徑與全螢幕 standalone 模式。 [不負責] 離線快取控制與路由重導。
-// - MWE：在 index.html 中以 <link rel="manifest" href="manifest.webmanifest"> 載入。
-// - 致命錯誤邊界：start_url 與 scope 若使用絕對路徑 "/" 會在 GitHub Pages 子路徑部署時安裝失敗；此處使用相對路徑 "./" 確保「風險受控」。
-
 {
-  "name": "大家的卡片",
-  "short_name": "大家的卡片",
-  "description": "共同卡片協作系統，手機原生體驗",
+  "name": "一起辦｜卡片協作工具",
+  "short_name": "一起辦",
+  "description": "共同任務卡片協作系統，手機原生體驗",
   "start_url": "./index.html",
   "scope": "./",
   "display": "standalone",
