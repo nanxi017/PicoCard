@@ -1,8 +1,8 @@
 <!--
-- 核心理由：承載應用程式的所有 DOM 節點、嵌入式高保真 PWA CSS，並作為單頁應用(SPA)的渲染容器。
-- 權責邊界：[負責] 結構宣告、版面響應式設定與靜態樣式。 [不負責] 狀態更新、資料庫同步與點擊事件綁定。
-- MWE：直接在瀏覽器雙擊此檔案，或使用 http-server/Live Server 本地託管開啟。
-- 致命錯誤邊界：若在非 HTTPS 或是非同源環境可能無法註冊 Service Worker；已配置安全提示與漸進式降級，風險受控。
+- 核心理由：App 主入口。移除了懸浮 FAB 按鈕以避免與卡片「傳送」衝突，並在 App Bar 整合了說明鈕，同時新增中鍵 ➕ 的精緻樣式。
+- 權責邊界：[負責] 結構宣告、版面響應式、與方案 A 的 Bottom Nav 及 App Bar 樣式。 [不負責] 狀態管理與動態事件處理。
+- MWE：直接雙擊或在本地靜態伺服器開啟。
+- 致命錯誤邊界：風險受控。
 -->
 <!doctype html>
 <html lang="zh-Hant-TW">
@@ -176,6 +176,12 @@
       font-weight: 800;
     }
 
+    .user-profile-row {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
     .user-profile {
       display: flex;
       flex-direction: column;
@@ -201,6 +207,25 @@
       font-weight: 800;
       padding: 2px 4px;
       text-decoration: underline;
+    }
+
+    /* 頂部整合說明按鈕 */
+    .info-btn {
+      background: rgba(255, 255, 255, .12);
+      border: 1px solid rgba(255, 255, 255, .3);
+      color: white;
+      width: 32px;
+      height: 32px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 14px;
+      font-weight: 950;
+    }
+
+    .info-btn:active {
+      background: rgba(255, 255, 255, .25);
     }
 
     /* 內容捲動區 */
@@ -451,22 +476,7 @@
       display: block;
     }
 
-    /* 浮動按鈕與底欄 */
-    .fab {
-      position: absolute;
-      right: 18px;
-      bottom: calc(84px + var(--bottom));
-      z-index: 26;
-      width: 58px;
-      height: 58px;
-      border-radius: 22px;
-      background: var(--main);
-      color: white;
-      font-size: 30px;
-      font-weight: 900;
-      box-shadow: 0 12px 28px rgba(15, 118, 110, .35);
-    }
-
+    /* 底欄 */
     .bottomNav {
       position: absolute;
       left: 0;
@@ -512,6 +522,30 @@
 
     .navBtn.manage {
       color: var(--purple);
+    }
+
+    /* 💡 方案 A 專屬：中鍵新增 ➕ 特殊醒目視覺設計 */
+    .navBtn.add-primary {
+      color: var(--main);
+      font-weight: 950;
+    }
+
+    .navBtn.add-primary b {
+      font-size: 22px;
+      background: var(--main);
+      color: white;
+      width: 34px;
+      height: 34px;
+      border-radius: 11px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin-bottom: 1px;
+      box-shadow: 0 4px 10px rgba(15, 118, 110, 0.3);
+    }
+
+    .navBtn.add-primary:active b {
+      background: var(--main-dark);
     }
 
     /* Bottom Sheet 面板結構 */
@@ -699,7 +733,7 @@
         <circle cx="376" cy="256" r="46" fill="#14b8a6"/>
       </svg>
       <h1>大家的卡片</h1>
-      <p>手勢手機 PWA 卡片池協作系統</p>
+      <p>共同卡片池協作系統</p>
       <button id="loginBtn" class="google-btn">使用 Google 帳號登入</button>
     </div>
   </div>
@@ -712,9 +746,13 @@
           <h1>大家的卡片</h1>
           <p>共同任務，完成與收起需先行確認。</p>
         </div>
-        <div class="user-profile">
-          <span id="userBadge" class="mode">載入中</span>
-          <button id="logoutBtn" class="logout-btn">登出</button>
+        <div class="user-profile-row">
+          <div class="user-profile">
+            <span id="userBadge" class="mode">載入中</span>
+            <button id="logoutBtn" class="logout-btn">登出</button>
+          </div>
+          <!-- 💡 方案 A 改進：全域說明按鈕移至此處，空出底部精華位置 -->
+          <button id="infoBtn" class="info-btn" aria-label="系統說明">ℹ️</button>
         </div>
       </div>
     </header>
@@ -742,8 +780,7 @@
       </section>
     </main>
 
-    <!-- 浮動按鈕 -->
-    <button id="fab" class="fab" aria-label="新增卡片">＋</button>
+    <!-- 💡 方案 A 改進：徹底刪除絕對定位的浮動按鈕 <button id="fab"> -->
     
     <!-- 底部導覽列 -->
     <nav id="bottomNav" class="bottomNav">
