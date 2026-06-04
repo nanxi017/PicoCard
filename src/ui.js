@@ -1,7 +1,7 @@
-// - 核心理由：系統唯一的畫面渲染與互動管理器，此版本修正了遺漏 getSelectedCard 導入而導致的 runtime 崩潰錯誤。
-// - 權責邊界：[負責] 操控 DOM、處理 Bottom Sheet 開關、彈出原子確認盒、提示 Toast、管理留言監聽釋放。 [不負責] 直接呼叫資料庫 API。
+// - 核心理由：系統唯一的畫面渲染與互動管理器，全面移除 FAB DOM 快取，將底部導覽列第 3 欄重構為直接喚起新增面板的黃金中鍵。
+// - 權責邊界：[負責] 操控 DOM、處理中鍵點擊直接調用 openSheet()、彈出原子確認盒、提示 Toast、管理留言監聽釋放。 [不負責] 直接呼叫資料庫 API。
 // - MWE：在 index.html 載入後，配合 DOM 元素進行介面渲染。
-// - 致命錯誤邊界：若卡片重繪時未釋放舊留言的即時監聽（onSnapshot），手機瀏覽器將在 5 分鐘內因 Listener 溢出而崩潰；此處實作 NoteUnsub Map 徹底解決，風險受控。
+// - 致命錯誤邊界：卡片重繪時必須嚴格釋放舊留言的即時監聽（onSnapshot），否則累積的 Listener 將導致瀏覽器記憶體洩漏當機，此處使用 noteUnsubscribers 完全規避，風險受控。
 
 import { appState, isEnded, canComplete, canPutaway, canRestore, canRecallNote, getSelectedCard } from "./state.js";
 import { login, logout } from "./auth.js";
@@ -16,13 +16,13 @@ export const dom = {
   loginBtn: document.getElementById("loginBtn"),
   logoutBtn: document.getElementById("logoutBtn"),
   userBadge: document.getElementById("userBadge"),
+  infoBtn: document.getElementById("infoBtn"), // 💡 方案 A 整合說明按鈕
   stats: document.getElementById("stats"),
   listTitle: document.getElementById("listTitle"),
   count: document.getElementById("count"),
   cards: document.getElementById("cards"),
   records: document.getElementById("records"),
   empty: document.getElementById("empty"),
-  fab: document.getElementById("fab"),
   bottomNav: document.getElementById("bottomNav"),
   mask: document.getElementById("mask"),
   sheet: document.getElementById("sheet"),
@@ -493,14 +493,14 @@ export function renderBottomNav() {
 
   } else {
     // ----------------------------------------------------
-    // 行動 B：未選取卡片 (全域頁籤分流導覽)
+    // 行動 B：未選取卡片 (全域頁籤分流導覽 - 方案 A 中鍵新增整合版)
     // ----------------------------------------------------
     const tabs = [
       ["全部", "📋", "all", ""],
       ["我建立", "✍️", "mine", ""],
+      ["新增", "➕", "add_sheet", "add-primary"], // 💡 方案 A 改進：第 3 欄為中鍵新增 ➕ 按鈕
       ["已結束", "✅", "ended", ""],
-      ["紀錄", "📜", "logs", ""],
-      ["說明", "ℹ️", "more", ""]
+      ["紀錄", "📜", "logs", ""]
     ];
 
     tabs.forEach(([txt, icon, tabId, clName]) => {
@@ -510,12 +510,13 @@ export function renderBottomNav() {
       b.innerHTML = `<b>${icon}</b><span>${txt}</span>`;
       
       b.onclick = () => {
-        if (tabId === "more") {
-          showToast(appState.currentUserDoc?.role === "manage" ? "管理身分：可收起所有卡片並執行恢復。" : "協作身分：可建立卡片與完成自己建立的卡片。");
+        // 💡 方案 A 核心事件：若點選中間的新增按鈕，不切換分頁，直接在原地彈出 Bottom Sheet 面板！
+        if (tabId === "add_sheet") {
+          openSheet();
           return;
         }
         
-        // 切換頁籤
+        // 其餘正常頁籤切換
         appState.currentTab = tabId;
         appState.selectedCardId = null; // 切換分頁時自動清除卡片選取
 
@@ -525,7 +526,7 @@ export function renderBottomNav() {
           renderLogs();
         } else {
           dom.records.hidden = true;
-          // 重建對應分頁的即時訂閱 (由 app.js 管理)
+          // 重建對應分頁的即時訂閱 (由 app.js 監聽並管理)
           window.dispatchEvent(new CustomEvent("tab-changed", { detail: tabId }));
         }
       };
