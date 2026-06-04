@@ -70,7 +70,7 @@ export function subscribeNotes(cardId, callback) {
  */
 export function subscribeLogs(callback) {
   const logsRef = collection(db, "activityLogs");
-  const q = query(logsRef, orderBy("createdAt", "desc"), limit(100));
+  const q = query(logsRef, orderBy("createdAt", "desc"), limit(30));
 
   return onSnapshot(q, (snapshot) => {
     const logs = [];
