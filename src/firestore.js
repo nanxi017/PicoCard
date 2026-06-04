@@ -28,32 +28,14 @@ import {
  */
 export function subscribeCards(filter, userId, callback) {
   const cardsRef = collection(db, "cards");
-  let q;
 
-  if (filter === "mine") {
-    q = query(
-      cardsRef,
-      where("state", "==", "open"),
-      where("life", "==", "open"),
-      where("createdBy", "==", userId),
-      orderBy("updatedAt", "desc")
-    );
-  } else if (filter === "ended") {
-    // 使用 patch 新增的 ended 衍生欄位，實現安全 AND 排序
-    q = query(
-      cardsRef,
-      where("ended", "==", true),
-      orderBy("updatedAt", "desc")
-    );
-  } else {
-    // 預設全部 (all)
-    q = query(
-      cardsRef,
-      where("state", "==", "open"),
-      where("life", "==", "open"),
-      orderBy("updatedAt", "desc")
-    );
-  }
+  // 統計必須永遠基於「全域卡片集合」，不能基於目前頁籤的可視列表。
+  // 因此不再讓 Firestore 查詢依 filter 回傳子集合；只做單一全域訂閱。
+  // renderCards() 才負責依 currentTab 做畫面篩選。
+  const q = query(
+    cardsRef,
+    orderBy("updatedAt", "desc")
+  );
 
   return onSnapshot(q, (snapshot) => {
     const cards = [];
