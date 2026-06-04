@@ -1,4 +1,4 @@
-// - 核心理由：系統唯一的畫面渲染與互動管理器，使用靜態單一 PWA Shell，僅負責畫面渲染與互動；UI 採弱視友善字級與觸控級距，第 3 欄「新增」直接喚起新增面板。
+// - 核心理由：系統唯一的畫面渲染與互動管理器，使用靜態單一 PWA Shell，僅負責畫面渲染與互動；UI 採弱視友善大型字級與觸控級距，第 3 欄「新增」直接喚起新增面板。
 // - 權責邊界：[負責] 操控 DOM、處理中鍵點擊直接調用 openSheet()、彈出原子確認盒、提示 Toast、管理留言監聽釋放。 [不負責] 直接呼叫資料庫 API。
 // - MWE：在 index.html 載入後，配合 DOM 元素進行介面渲染。
 // - 致命錯誤邊界：卡片重繪時必須嚴格釋放舊留言的即時監聽（onSnapshot），否則累積的 Listener 將導致瀏覽器記憶體洩漏當機，此處使用 noteUnsubscribers 完全規避，風險受控。
@@ -495,7 +495,8 @@ export function renderLogs() {
   dom.empty.classList.remove("show");
 
   dom.listTitle.textContent = "系統操作紀錄";
-  dom.count.textContent = `${appState.logs.length} 筆`;
+  dom.count.textContent = appState.logs.length >= 30 ? "最新 30 筆" : `${appState.logs.length} 筆`;
+  dom.count.textContent = appState.logs.length >= 30 ? "最新 30 筆" : `${appState.logs.length} 筆`;
   dom.cards.innerHTML = "";
   
   if (appState.logs.length === 0) {
