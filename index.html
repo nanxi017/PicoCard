@@ -1,7 +1,7 @@
 <!--
-- 核心理由：App 主入口。移除了懸浮 FAB 按鈕以避免與卡片「傳送」衝突，並在 App Bar 整合了說明鈕，同時新增中鍵 ➕ 的精緻樣式。
-- 權責邊界：[負責] 結構宣告、版面響應式、與方案 A 的 Bottom Nav 及 App Bar 樣式。 [不負責] 狀態管理與動態事件處理。
-- MWE：直接雙擊或在本地靜態伺服器開啟。
+- 核心理由：App 主入口。已整合「中鍵新增 ➕」、「頂部說明鈕」，並套用 10%~15% 黃金字體放大比例，提升行動裝置閱讀性與防 iOS 縮放。
+- 權責邊界：[負責] 結構宣告、高保真響應式配置、與安全極限字體尺寸。 [不負責] 狀態管理與動態事件處理。
+- MWE：直接雙擊或在本地靜態伺服器開啟，完全覆蓋舊版。
 - 致命錯誤邊界：風險受控。
 -->
 <!doctype html>
@@ -203,7 +203,7 @@
     .logout-btn {
       background: transparent;
       color: rgba(255, 255, 255, 0.7);
-      font-size: 10px;
+      font-size: 11px; /* 稍微放大登出鈕 */
       font-weight: 800;
       padding: 2px 4px;
       text-decoration: underline;
@@ -266,7 +266,7 @@
 
     .stat b {
       display: block;
-      font-size: 18px;
+      font-size: 22px; /* 數字放大至 22px */
       line-height: 1;
       font-weight: 950;
     }
@@ -275,7 +275,7 @@
       display: block;
       margin-top: 5px;
       color: var(--muted);
-      font-size: 10px;
+      font-size: 11.5px; /* 標籤放大至 11.5px */
       font-weight: 900;
       white-space: nowrap;
     }
@@ -321,7 +321,7 @@
     }
 
     .title {
-      font-size: 17px;
+      font-size: 19px; /* 標題放大至 19px */
       line-height: 1.35;
       font-weight: 950;
       word-break: break-all;
@@ -353,7 +353,7 @@
     .meta {
       margin-top: 8px;
       color: var(--muted);
-      font-size: 12px;
+      font-size: 13px; /* 詮釋資料放大至 13px */
       line-height: 1.45;
       font-weight: 750;
     }
@@ -362,9 +362,9 @@
       margin-top: 10px;
       background: #f8fafc;
       border-radius: 15px;
-      padding: 10px;
+      padding: 12px; /* 內距增加呼吸感 */
       color: #334155;
-      font-size: 14px;
+      font-size: 16px; /* 內文放大至 16px 黃金閱讀大小 */
       line-height: 1.55;
       white-space: pre-wrap;
       word-break: break-all;
@@ -380,7 +380,7 @@
     .textBtn {
       background: transparent;
       color: var(--main);
-      font-size: 13px;
+      font-size: 14px; /* 展開按鈕稍微放大 */
       font-weight: 950;
       padding: 7px 0 0;
     }
@@ -404,7 +404,7 @@
       justify-content: space-between;
       gap: 8px;
       color: var(--muted);
-      font-size: 12px;
+      font-size: 13px; /* 留言標頭放大至 13px */
       font-weight: 900;
       margin-bottom: 5px;
     }
@@ -419,8 +419,8 @@
     }
 
     .noteText {
-      font-size: 14px;
-      line-height: 1.45;
+      font-size: 15px; /* 留言內容放大至 15px */
+      line-height: 1.5;
       white-space: pre-wrap;
     }
 
@@ -456,7 +456,7 @@
       border-radius: 18px;
       padding: 12px;
       font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
-      font-size: 12px;
+      font-size: 13px; /* 日誌稍微放大 */
       line-height: 1.55;
       white-space: pre-wrap;
     }
@@ -469,6 +469,7 @@
       padding: 28px 16px;
       text-align: center;
       color: var(--muted);
+      font-size: 14px; /* 空白提示放大 */
       font-weight: 850;
     }
 
@@ -497,7 +498,7 @@
       border-radius: 18px;
       background: transparent;
       color: var(--muted);
-      font-size: 11px;
+      font-size: 12px; /* 導覽字體放大至不破版極限 12px */
       font-weight: 950;
       display: flex;
       flex-direction: column;
@@ -507,7 +508,7 @@
     }
 
     .navBtn b {
-      font-size: 18px;
+      font-size: 20px; /* 導覽圖示放大至 20px */
       line-height: 1;
     }
 
@@ -524,18 +525,18 @@
       color: var(--purple);
     }
 
-    /* 💡 方案 A 專屬：中鍵新增 ➕ 特殊醒目視覺設計 */
+    /* 方案 A 專屬：中鍵新增 ➕ 特殊醒目視覺設計 */
     .navBtn.add-primary {
       color: var(--main);
       font-weight: 950;
     }
 
     .navBtn.add-primary b {
-      font-size: 22px;
+      font-size: 24px; /* 中鍵圖示等比放大 */
       background: var(--main);
       color: white;
-      width: 34px;
-      height: 34px;
+      width: 36px;  /* 中鍵框等比放大 */
+      height: 36px;
       border-radius: 11px;
       display: flex;
       align-items: center;
@@ -546,6 +547,11 @@
 
     .navBtn.add-primary:active b {
       background: var(--main-dark);
+    }
+
+    /* 強制輸入框字體為 16px，防止 iOS 點擊輸入時畫面自動放大 (Auto-zoom) */
+    .say input, .form input, .form textarea {
+      font-size: 16px !important;
     }
 
     /* Bottom Sheet 面板結構 */
@@ -630,6 +636,7 @@
       height: 48px;
       border-radius: 17px;
       font-weight: 950;
+      font-size: 15px; /* 按鈕文字稍微放大 */
     }
 
     .cancel {
@@ -670,6 +677,7 @@
       margin: 0 0 14px;
       color: var(--muted);
       line-height: 1.5;
+      font-size: 15px; /* 確認內文放大 */
       font-weight: 800;
     }
 
@@ -683,6 +691,7 @@
       height: 48px;
       border-radius: 17px;
       font-weight: 950;
+      font-size: 15px; /* 按鈕文字稍微放大 */
     }
 
     .confirmNo {
@@ -724,7 +733,7 @@
 <body>
 <div class="phone">
   
-  <!-- 1. 防禦性未授權登入畫面 -->
+  <!-- 防禦性未授權登入畫面 -->
   <div id="loginScreen" class="login-screen">
     <div class="brand-box">
       <svg class="app-logo" width="100" height="100" viewBox="0 0 512 512">
@@ -738,7 +747,7 @@
     </div>
   </div>
 
-  <!-- 2. 已授權主應用程式畫面 -->
+  <!-- 已授權主應用程式畫面 -->
   <div id="mainApp" style="display: none; flex: 1; flex-direction: column; overflow: hidden;">
     <header class="appbar">
       <div class="appbarTop">
@@ -751,7 +760,7 @@
             <span id="userBadge" class="mode">載入中</span>
             <button id="logoutBtn" class="logout-btn">登出</button>
           </div>
-          <!-- 💡 方案 A 改進：全域說明按鈕移至此處，空出底部精華位置 -->
+          <!-- 全域說明按鈕整合至 App Bar -->
           <button id="infoBtn" class="info-btn" aria-label="系統說明">ℹ️</button>
         </div>
       </div>
@@ -779,8 +788,6 @@
         目前無任何卡片。
       </section>
     </main>
-
-    <!-- 💡 方案 A 改進：徹底刪除絕對定位的浮動按鈕 <button id="fab"> -->
     
     <!-- 底部導覽列 -->
     <nav id="bottomNav" class="bottomNav">
@@ -788,7 +795,7 @@
     </nav>
   </div>
 
-  <!-- 3. Bottom Sheet 面板 -->
+  <!-- Bottom Sheet 面板 -->
   <div id="mask" class="sheetMask"></div>
   <section id="sheet" class="sheet">
     <div class="handle"></div>
@@ -804,7 +811,7 @@
     </form>
   </section>
 
-  <!-- 4. 行動確認對話盒 -->
+  <!-- 行動確認對話盒 -->
   <div id="confirmMask" class="confirmMask"></div>
   <section id="confirmBox" class="confirmBox">
     <h2 id="confirmTitle">確認完成</h2>
@@ -815,7 +822,7 @@
     </div>
   </section>
 
-  <!-- 5. Toast 提示盒 -->
+  <!-- Toast 提示盒 -->
   <div id="toast" class="toast"></div>
 
 </div>
