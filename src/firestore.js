@@ -29,9 +29,8 @@ import {
 export function subscribeCards(filter, userId, callback) {
   const cardsRef = collection(db, "cards");
 
-  // 統計必須永遠基於「全域卡片集合」，不能基於目前頁籤的可視列表。
-  // 因此不再讓 Firestore 查詢依 filter 回傳子集合；只做單一全域訂閱。
-  // renderCards() 才負責依 currentTab 做畫面篩選。
+  // 統計與全域摘要必須永遠基於完整 cards 集合。
+  // 頁籤分類只應在 UI 的 renderCards() 內做可視列表篩選。
   const q = query(
     cardsRef,
     orderBy("updatedAt", "desc")
