@@ -3,7 +3,7 @@
 // - MWE：在客戶端由 navigator.serviceWorker.register('./sw.js') 註冊。
 // - 致命錯誤邊界：若不慎快取 Firebase Auth 或是 Firestore API 會造成動態資料死鎖；已在 fetch 階段嚴格限制「僅處理同源 GET 請求」，風險受控。
 
-const CACHE_NAME = 'yiqiban-v2';
+const CACHE_NAME = 'yiqiban-v3-mobile-shell';
 const ASSETS = [
   './',
   './index.html',
