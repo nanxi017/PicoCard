@@ -41,6 +41,266 @@ export const dom = {
   content: document.getElementById("content")
 };
 
+// ==========================================
+// 1.1 最終手機資訊架構：固定頂部控制區
+// ==========================================
+let topDockReady = false;
+
+function ensureFinalTopDockLayout() {
+  if (topDockReady || !dom.mainApp || !dom.bottomNav) return;
+  topDockReady = true;
+  document.title = "一起辦｜卡片協作工具";
+
+  const style = document.createElement("style");
+  style.id = "picocard-final-topdock-style";
+  style.textContent = `
+    :root { --top-safe: env(safe-area-inset-top, 0px); }
+    #finalTopDock {
+      position: sticky;
+      top: 0;
+      z-index: 1000;
+      background: var(--bg, #eef6ff);
+      padding: calc(8px + var(--top-safe)) 10px 8px;
+      border-bottom: 1px solid var(--line, #dbe5ee);
+      box-shadow: 0 6px 18px rgba(16, 32, 51, .10);
+    }
+    #finalTopDock .finalTopRow {
+      display: grid;
+      grid-template-columns: 1fr auto;
+      gap: 8px;
+      align-items: center;
+      margin-bottom: 8px;
+    }
+    #finalTopDock .finalBrandTitle {
+      font-size: 20px;
+      line-height: 1.1;
+      font-weight: 950;
+      color: var(--text, #102033);
+    }
+    #finalTopDock .finalBrandSub {
+      margin-top: 2px;
+      font-size: 12px;
+      font-weight: 850;
+      color: var(--muted, #66758a);
+    }
+    #finalTopDock .finalIdentity {
+      display: flex;
+      align-items: center;
+      justify-content: flex-end;
+      gap: 6px;
+      min-width: 0;
+      flex-wrap: wrap;
+    }
+    #finalTopDock #userBadge {
+      max-width: 150px;
+      overflow: hidden;
+      white-space: nowrap;
+      text-overflow: ellipsis;
+    }
+    #finalTopDock #bottomNav {
+      position: static !important;
+      left: auto !important;
+      right: auto !important;
+      bottom: auto !important;
+      transform: none !important;
+      width: 100% !important;
+      max-width: none !important;
+      z-index: auto !important;
+      background: transparent !important;
+      border-top: 0 !important;
+      padding: 0 !important;
+      box-shadow: none !important;
+      display: grid !important;
+      grid-template-columns: repeat(5, 1fr) !important;
+      gap: 6px !important;
+    }
+    #finalTopDock #bottomNav .navBtn {
+      min-height: 46px;
+      height: 46px;
+      border-radius: 15px;
+      background: #fff;
+      border: 1px solid var(--line, #dbe5ee);
+      color: var(--muted, #66758a);
+      font-size: 11px;
+      font-weight: 950;
+    }
+    #finalTopDock #bottomNav .navBtn.on {
+      background: var(--main, #0f766e);
+      color: #fff;
+      border-color: var(--main, #0f766e);
+    }
+    #finalTopDock #bottomNav .navBtn.add-primary {
+      background: #0f766e;
+      color: #fff;
+      border-color: #0f766e;
+    }
+    #stats {
+      position: static !important;
+      top: auto !important;
+      z-index: auto !important;
+    }
+    #mainApp {
+      padding-bottom: 0 !important;
+    }
+    .cardActionDetails {
+      margin-top: 10px;
+      border: 1px solid var(--line, #dbe5ee);
+      border-radius: 16px;
+      background: #fff;
+      overflow: hidden;
+    }
+    .cardActionDetails > summary {
+      list-style: none;
+      cursor: pointer;
+      padding: 10px 12px;
+      font-size: 13px;
+      font-weight: 950;
+      color: var(--main, #0f766e);
+      user-select: none;
+    }
+    .cardActionDetails > summary::-webkit-details-marker { display: none; }
+    .cardActionRow {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 6px;
+      padding: 0 10px 10px;
+    }
+    .cardActionRow button {
+      min-height: 38px;
+      border: 1px solid var(--line, #dbe5ee);
+      border-radius: 13px;
+      background: #fff;
+      font-size: 13px;
+      font-weight: 950;
+      color: var(--main, #0f766e);
+    }
+    .cardActionRow button.danger { color: var(--red, #dc2626); }
+    .cardActionRow button.manage { color: var(--purple, #6d28d9); }
+    @media (max-width: 380px) {
+      #finalTopDock .finalBrandTitle { font-size: 18px; }
+      #finalTopDock #bottomNav .navBtn { font-size: 10px; }
+      #finalTopDock #userBadge { max-width: 120px; }
+    }
+  `;
+  document.head.appendChild(style);
+
+  const topDock = document.createElement("section");
+  topDock.id = "finalTopDock";
+
+  const topRow = document.createElement("div");
+  topRow.className = "finalTopRow";
+
+  const brand = document.createElement("div");
+  brand.className = "finalBrand";
+  brand.innerHTML = `
+    <div class="finalBrandTitle">一起辦</div>
+    <div class="finalBrandSub">卡片協作工具</div>
+  `;
+
+  const identity = document.createElement("div");
+  identity.className = "finalIdentity";
+  if (dom.userBadge) identity.appendChild(dom.userBadge);
+  if (dom.infoBtn) identity.appendChild(dom.infoBtn);
+  if (dom.logoutBtn) identity.appendChild(dom.logoutBtn);
+
+  topRow.appendChild(brand);
+  topRow.appendChild(identity);
+  topDock.appendChild(topRow);
+  topDock.appendChild(dom.bottomNav);
+  dom.mainApp.prepend(topDock);
+
+  // 隱藏舊標題文字，避免與新名稱重複；只隱藏未被移入 finalTopDock 的第一個 h1。
+  const legacyTitle = Array.from(document.querySelectorAll("h1")).find(h => !topDock.contains(h));
+  if (legacyTitle) legacyTitle.style.display = "none";
+}
+
+function runCardAction(action, card) {
+  if (action === "complete") {
+    askConfirm(
+      "確認完成",
+      `要把「${card.title}」標記為完成嗎？`,
+      async () => {
+        try {
+          await completeCard(card, appState.currentUser, appState.currentUserDoc);
+          appState.selectedCardId = null;
+          showToast("卡片已完成");
+        } catch (err) {
+          showToast("操作被拒絕：" + err.message);
+        }
+      }
+    );
+  }
+  if (action === "putaway") {
+    askConfirm(
+      "確認收起",
+      `要把「${card.title}」放入收起夾嗎？`,
+      async () => {
+        try {
+          await putawayCard(card, appState.currentUser, appState.currentUserDoc);
+          appState.selectedCardId = null;
+          showToast("卡片已收起");
+        } catch (err) {
+          showToast("操作被拒絕：" + err.message);
+        }
+      },
+      true
+    );
+  }
+  if (action === "restore") {
+    askConfirm(
+      "確認恢復",
+      `要把「${card.title}」重新恢復到要做的卡片池嗎？`,
+      async () => {
+        try {
+          await restoreCard(card, appState.currentUser, appState.currentUserDoc);
+          appState.selectedCardId = null;
+          showToast("卡片已恢復");
+        } catch (err) {
+          showToast("操作被拒絕：" + err.message);
+        }
+      }
+    );
+  }
+}
+
+function buildCardActionDetails(card) {
+  const actions = [];
+  if (canComplete(card, appState.currentUser, appState.currentUserDoc)) {
+    actions.push(["完成", "complete", ""]);
+  }
+  if (canPutaway(card, appState.currentUser, appState.currentUserDoc)) {
+    actions.push(["收起", "putaway", "danger"]);
+  }
+  if (canRestore(card, appState.currentUser, appState.currentUserDoc)) {
+    actions.push(["恢復", "restore", "manage"]);
+  }
+  if (actions.length === 0) return null;
+
+  const details = document.createElement("details");
+  details.className = "cardActionDetails";
+  const summary = document.createElement("summary");
+  summary.textContent = "操作";
+  details.appendChild(summary);
+
+  const row = document.createElement("div");
+  row.className = "cardActionRow";
+  actions.forEach(([label, action, cls]) => {
+    const btn = document.createElement("button");
+    btn.type = "button";
+    btn.className = cls;
+    btn.textContent = label;
+    btn.onclick = (e) => {
+      e.stopPropagation();
+      details.open = false;
+      runCardAction(action, card);
+    };
+    row.appendChild(btn);
+  });
+  details.appendChild(row);
+  return details;
+}
+
+
 // 用以儲存各個卡片留言監聽器的登出回呼，防止記憶體洩漏
 const noteUnsubscribers = new Map();
 
@@ -111,6 +371,7 @@ export function closeConfirm() {
  * 切換授權視窗
  */
 export function renderAuthStates() {
+  ensureFinalTopDockLayout();
   if (appState.currentUser && appState.currentUserDoc) {
     dom.loginScreen.style.display = "none";
     dom.mainApp.style.display = "flex";
@@ -129,11 +390,10 @@ export function renderAuthStates() {
  * 渲染統計資訊
  */
 export function renderStats() {
-  // 統計必須使用全域資料集 appState.cards。
-  // 禁止使用目前頁籤篩選後的 renderList，避免切到「已結束」後污染「待處理 / 我建立」統計。
+  // 統計摘要不固定，且永遠使用全域 appState.cards。
+  // 禁止用頁籤篩選後的 renderList 計算，避免「已結束」頁污染待處理與我建立數字。
   const source = appState.cards;
   const uid = appState.currentUser?.uid;
-
   const totalActive = source.filter(c => c.state === "open" && c.life === "open").length;
   const totalMine = source.filter(c => c.state === "open" && c.life === "open" && c.createdBy === uid).length;
   const totalDone = source.filter(c => c.state === "done" && c.life === "open").length;
@@ -167,8 +427,7 @@ export function renderCards() {
   releaseNoteListeners();
   dom.cards.innerHTML = "";
 
-  // 依據頁籤過濾卡片。
-  // 注意：統計使用全域 appState.cards；只有列表 renderList 能被頁籤篩選。
+  // 依據頁籤過濾卡片；統計摘要仍使用全域 appState.cards。
   let renderList = [...appState.cards];
   if (appState.currentTab === "mine") {
     renderList = renderList.filter(c => c.state === "open" && c.life === "open" && c.createdBy === appState.currentUser?.uid);
@@ -201,17 +460,11 @@ export function renderCards() {
     const cardEl = document.createElement("article");
     cardEl.className = `card ${isEnded(card) ? "ended" : ""} ${isSelected ? "selected" : ""}`;
     
-    // 點選卡片切換選取狀態
+    // 卡片本身只負責閱讀；卡片操作由小型「操作」入口處理。
     cardEl.onclick = (e) => {
-      if (e.target.closest("button") || e.target.closest("form") || e.target.closest("input")) {
-        return; // 排除按鈕與輸入框
+      if (e.target.closest("button") || e.target.closest("form") || e.target.closest("input") || e.target.closest("details")) {
+        return;
       }
-      if (appState.selectedCardId === card.id) {
-        appState.selectedCardId = null; // 取消選取
-      } else {
-        appState.selectedCardId = card.id;
-      }
-      renderCards(); // 局部重繪狀態
     };
 
     // 狀態文字對應
@@ -238,6 +491,11 @@ export function renderCards() {
     metaRow.className = "meta";
     metaRow.textContent = `建立：${card.createdByName} ｜ 更新：${formatTime(card.updatedAt)}`;
     cardEl.appendChild(metaRow);
+
+    const cardActions = buildCardActionDetails(card);
+    if (cardActions) {
+      cardEl.appendChild(cardActions);
+    }
 
     // 卡片內文 (展開/收合控制)
     if (card.body) {
@@ -422,139 +680,45 @@ export function renderLogs() {
  * 底部導覽按鈕管理器 (BDD 核心 UI 定界)
  */
 export function renderBottomNav() {
+  ensureFinalTopDockLayout();
   dom.bottomNav.innerHTML = "";
-  const cardSelected = getSelectedCard();
 
-  if (cardSelected) {
-    // ----------------------------------------------------
-    // 行動 A：已選取卡片 (聚焦特定卡片的操作狀態機)
-    // ----------------------------------------------------
-    const actions = [];
+  const tabs = [
+    ["全部", "📋", "all", ""],
+    ["我建立", "✍️", "mine", ""],
+    ["新增", "➕", "add_sheet", "add-primary"],
+    ["已結束", "✔", "ended", ""],
+    ["紀錄", "📝", "logs", ""]
+  ];
 
-    // 1. 完成動作
-    if (canComplete(cardSelected, appState.currentUser, appState.currentUserDoc)) {
-      actions.push(["完成", "✔", async () => {
-        askConfirm(
-          "確認完成",
-          `要把「${cardSelected.title}」標記為完成嗎？`,
-          async () => {
-            try {
-              await completeCard(cardSelected, appState.currentUser, appState.currentUserDoc);
-              appState.selectedCardId = null;
-              showToast("卡片已完成");
-            } catch (err) {
-              showToast("操作被拒絕：" + err.message);
-            }
-          }
-        );
-      }, "green-text"]);
-    }
+  tabs.forEach(([txt, icon, tabId, clName]) => {
+    const b = document.createElement("button");
+    const isActive = appState.currentTab === tabId;
+    b.className = `navBtn ${isActive ? "on" : ""} ${clName}`;
+    b.innerHTML = `<b>${icon}</b><span>${txt}</span>`;
 
-    // 2. 收起動作
-    if (canPutaway(cardSelected, appState.currentUser, appState.currentUserDoc)) {
-      actions.push(["收起", "⛔", async () => {
-        askConfirm(
-          "確認收起",
-          `要把「${cardSelected.title}」放入收起夾嗎？`,
-          async () => {
-            try {
-              await putawayCard(cardSelected, appState.currentUser, appState.currentUserDoc);
-              appState.selectedCardId = null;
-              showToast("卡片已收起");
-            } catch (err) {
-              showToast("操作被拒絕：" + err.message);
-            }
-          },
-          true
-        );
-      }, "danger"]);
-    }
+    b.onclick = () => {
+      if (tabId === "add_sheet") {
+        openSheet();
+        return;
+      }
 
-    // 3. 恢復動作
-    if (canRestore(cardSelected, appState.currentUser, appState.currentUserDoc)) {
-      actions.push(["恢復", "🔄", async () => {
-        askConfirm(
-          "確認恢復",
-          `要把「${cardSelected.title}」重新恢復到要做的卡片池嗎？`,
-          async () => {
-            try {
-              await restoreCard(cardSelected, appState.currentUser, appState.currentUserDoc);
-              appState.selectedCardId = null;
-              showToast("卡片已恢復");
-            } catch (err) {
-              showToast("操作被拒絕：" + err.message);
-            }
-          }
-        );
-      }, "manage"]);
-    }
-
-    // 4. 返回按鈕
-    actions.push(["返回", "↩", () => {
+      appState.currentTab = tabId;
       appState.selectedCardId = null;
-      renderCards();
-    }, ""]);
+      if (tabId === "logs") {
+        dom.cards.innerHTML = "";
+        dom.records.textContent = "載入系統操作紀錄中...";
+        dom.records.hidden = false;
+        dom.empty.classList.remove("show");
+      } else {
+        dom.records.hidden = true;
+        dom.records.textContent = "";
+      }
+      window.dispatchEvent(new CustomEvent("tab-changed", { detail: tabId }));
+    };
 
-    // 填充空白導覽按鈕，維護 5 欄均分
-    while (actions.length < 5) {
-      actions.unshift(["", "", () => {}, "disabled"]);
-    }
-
-    actions.forEach(([txt, icon, fn, clName]) => {
-      const b = document.createElement("button");
-      b.className = `navBtn ${clName}`;
-      if (clName === "disabled") b.disabled = true;
-      b.innerHTML = `<b>${icon}</b><span>${txt}</span>`;
-      b.onclick = fn;
-      dom.bottomNav.appendChild(b);
-    });
-
-  } else {
-    // ----------------------------------------------------
-    // 行動 B：未選取卡片 (全域頁籤分流導覽 - 方案 A 中鍵新增整合版)
-    // ----------------------------------------------------
-    const tabs = [
-      ["全部", "📋", "all", ""],
-      ["我建立", "✍️", "mine", ""],
-      ["新增", "➕", "add_sheet", "add-primary"], // 💡 方案 A 改進：第 3 欄為中鍵新增 ➕ 按鈕
-      ["已結束", "✅", "ended", ""],
-      ["紀錄", "📜", "logs", ""]
-    ];
-
-    tabs.forEach(([txt, icon, tabId, clName]) => {
-      const b = document.createElement("button");
-      const isActive = appState.currentTab === tabId;
-      b.className = `navBtn ${isActive ? "on" : ""} ${clName}`;
-      b.innerHTML = `<b>${icon}</b><span>${txt}</span>`;
-      
-      b.onclick = () => {
-        // 💡 方案 A 核心事件：若點選中間的新增按鈕，不切換分頁，直接在原地彈出 Bottom Sheet 面板！
-        if (tabId === "add_sheet") {
-          openSheet();
-          return;
-        }
-        
-        // 其餘正常頁籤切換
-        appState.currentTab = tabId;
-        appState.selectedCardId = null; // 切換分頁時自動清除卡片選取
-
-        if (tabId === "logs") {
-          dom.cards.innerHTML = "";
-          dom.records.textContent = "載入系統操作紀錄中...";
-          dom.records.hidden = false;
-          dom.empty.classList.remove("show");
-        } else {
-          dom.records.hidden = true;
-          dom.records.textContent = "";
-        }
-
-        // 所有分頁都必須交由 app.js 重建即時訂閱；UI 不直接推測資料來源
-        window.dispatchEvent(new CustomEvent("tab-changed", { detail: tabId }));
-      };
-
-      dom.bottomNav.appendChild(b);
-    });
-  }
+    dom.bottomNav.appendChild(b);
+  });
 }
 
 // ==========================================
