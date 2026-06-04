@@ -1,0 +1,789 @@
+<!--
+- 核心理由：承載應用程式的所有 DOM 節點、嵌入式高保真 PWA CSS，並作為單頁應用(SPA)的渲染容器。
+- 權責邊界：[負責] 結構宣告、版面響應式設定與靜態樣式。 [不負責] 狀態更新、資料庫同步與點擊事件綁定。
+- MWE：直接在瀏覽器雙擊此檔案，或使用 http-server/Live Server 本地託管開啟。
+- 致命錯誤邊界：若在非 HTTPS 或是非同源環境可能無法註冊 Service Worker；已配置安全提示與漸進式降級，風險受控。
+-->
+<!doctype html>
+<html lang="zh-Hant-TW">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
+  <meta name="theme-color" content="#0f766e">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-title" content="大家的卡片">
+  <link rel="manifest" href="manifest.webmanifest">
+  <link rel="apple-touch-icon" href="assets/icon.svg">
+  <title>大家的卡片</title>
+  <style>
+    :root {
+      --main: #0f766e;
+      --main-dark: #0d5c56;
+      --bg: #eef6ff;
+      --text: #102033;
+      --muted: #66758a;
+      --line: #dbe5ee;
+      --red: #dc2626;
+      --green: #07855f;
+      --purple: #6d28d9;
+      --shadow: 0 12px 32px rgba(16, 32, 51, .14);
+      --top: env(safe-area-inset-top, 0px);
+      --bottom: env(safe-area-inset-bottom, 0px);
+    }
+
+    * {
+      box-sizing: border-box;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    html, body {
+      margin: 0;
+      min-height: 100dvh;
+      background: #cfe4ff;
+      color: var(--text);
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Noto Sans TC", "Microsoft JhengHei", Arial, sans-serif;
+      overscroll-behavior: none;
+    }
+
+    body {
+      display: flex;
+      justify-content: center;
+    }
+
+    button, input, select, textarea {
+      font: inherit;
+    }
+
+    button {
+      touch-action: manipulation;
+      cursor: pointer;
+      border: 0;
+    }
+
+    button:disabled {
+      opacity: .42;
+      cursor: not-allowed;
+    }
+
+    /* 手機外殼與響應式 */
+    .phone {
+      width: 100%;
+      max-width: 430px;
+      min-height: 100dvh;
+      background: var(--bg);
+      position: relative;
+      overflow: hidden;
+      box-shadow: 0 0 0 1px rgba(16, 32, 51, .08);
+      display: flex;
+      flex-direction: column;
+    }
+
+    @media (min-width: 431px) {
+      .phone {
+        margin: 16px 0;
+        border-radius: 34px;
+        min-height: calc(100dvh - 32px);
+        height: calc(100dvh - 32px);
+      }
+    }
+
+    /* 登入畫面 */
+    .login-screen {
+      flex: 1;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 24px;
+      text-align: center;
+      background: linear-gradient(135deg, #e0f2fe 0%, #eef6ff 100%);
+    }
+
+    .brand-box {
+      width: 100%;
+    }
+
+    .app-logo {
+      margin-bottom: 24px;
+      filter: drop-shadow(0 8px 16px rgba(15, 118, 110, 0.25));
+    }
+
+    .brand-box h1 {
+      margin: 0 0 8px;
+      font-size: 28px;
+      font-weight: 950;
+      color: var(--main);
+    }
+
+    .brand-box p {
+      margin: 0 0 32px;
+      font-size: 15px;
+      color: var(--muted);
+      font-weight: 700;
+    }
+
+    .google-btn {
+      width: 100%;
+      height: 52px;
+      border-radius: 18px;
+      background: white;
+      color: var(--text);
+      font-weight: 950;
+      font-size: 15px;
+      box-shadow: 0 4px 12px rgba(16, 32, 51, 0.08);
+      border: 1px solid var(--line);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 12px;
+    }
+
+    .google-btn:active {
+      background: #f8fafc;
+    }
+
+    /* 導覽列與標題 */
+    .appbar {
+      position: sticky;
+      top: 0;
+      z-index: 20;
+      background: linear-gradient(180deg, var(--main) 0%, var(--main-dark) 100%);
+      color: white;
+      padding: calc(14px + var(--top)) 16px 14px;
+      border-bottom-left-radius: 24px;
+      border-bottom-right-radius: 24px;
+      box-shadow: 0 8px 22px rgba(15, 118, 110, .25);
+    }
+
+    .appbarTop {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+    }
+
+    .brand h1 {
+      margin: 0;
+      font-size: 22px;
+      font-weight: 950;
+    }
+
+    .brand p {
+      margin: 4px 0 0;
+      font-size: 11px;
+      line-height: 1.35;
+      color: rgba(255, 255, 255, .82);
+      font-weight: 800;
+    }
+
+    .user-profile {
+      display: flex;
+      flex-direction: column;
+      align-items: flex-end;
+      gap: 4px;
+    }
+
+    .mode {
+      background: rgba(255, 255, 255, .15);
+      border: 1px solid rgba(255, 255, 255, .3);
+      color: white;
+      border-radius: 999px;
+      padding: 4px 8px;
+      font-size: 11px;
+      font-weight: 950;
+      white-space: nowrap;
+    }
+
+    .logout-btn {
+      background: transparent;
+      color: rgba(255, 255, 255, 0.7);
+      font-size: 10px;
+      font-weight: 800;
+      padding: 2px 4px;
+      text-decoration: underline;
+    }
+
+    /* 內容捲動區 */
+    .content {
+      flex: 1;
+      overflow-y: auto;
+      padding: 12px 12px calc(104px + var(--bottom));
+      scrollbar-width: none;
+    }
+
+    .content::-webkit-scrollbar {
+      display: none;
+    }
+
+    /* 統計面板 */
+    .panel {
+      background: rgba(255, 255, 255, .96);
+      border: 1px solid rgba(219, 229, 238, .9);
+      border-radius: 22px;
+      padding: 13px;
+      margin-bottom: 12px;
+      box-shadow: 0 8px 22px rgba(16, 32, 51, .08);
+    }
+
+    .stats {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 7px;
+    }
+
+    .stat {
+      background: white;
+      border: 1px solid var(--line);
+      border-radius: 17px;
+      padding: 10px 4px;
+      text-align: center;
+    }
+
+    .stat b {
+      display: block;
+      font-size: 18px;
+      line-height: 1;
+      font-weight: 950;
+    }
+
+    .stat span {
+      display: block;
+      margin-top: 5px;
+      color: var(--muted);
+      font-size: 10px;
+      font-weight: 900;
+      white-space: nowrap;
+    }
+
+    .sectionTitle {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      color: var(--muted);
+      font-size: 13px;
+      font-weight: 950;
+      margin: 4px 4px 9px;
+    }
+
+    /* 卡片卡池 */
+    .cards {
+      display: grid;
+      gap: 12px;
+    }
+
+    .card {
+      background: white;
+      border: 1px solid var(--line);
+      border-radius: 24px;
+      padding: 14px;
+      box-shadow: 0 8px 20px rgba(16, 32, 51, .08);
+      position: relative;
+    }
+
+    .card.selected {
+      outline: 3px solid rgba(15, 118, 110, .22);
+    }
+
+    .card.ended {
+      opacity: .78;
+    }
+
+    .cardTop {
+      display: flex;
+      justify-content: space-between;
+      gap: 10px;
+      align-items: flex-start;
+    }
+
+    .title {
+      font-size: 17px;
+      line-height: 1.35;
+      font-weight: 950;
+      word-break: break-all;
+    }
+
+    .state {
+      border-radius: 999px;
+      padding: 7px 9px;
+      font-size: 12px;
+      font-weight: 950;
+      white-space: nowrap;
+    }
+
+    .open {
+      background: #f1f5f9;
+      color: #475569;
+    }
+
+    .done {
+      background: #ecfdf5;
+      color: var(--green);
+    }
+
+    .putaway {
+      background: #f3f4f6;
+      color: #6b7280;
+    }
+
+    .meta {
+      margin-top: 8px;
+      color: var(--muted);
+      font-size: 12px;
+      line-height: 1.45;
+      font-weight: 750;
+    }
+
+    .body {
+      margin-top: 10px;
+      background: #f8fafc;
+      border-radius: 15px;
+      padding: 10px;
+      color: #334155;
+      font-size: 14px;
+      line-height: 1.55;
+      white-space: pre-wrap;
+      word-break: break-all;
+    }
+
+    .body.fold {
+      display: -webkit-box;
+      -webkit-line-clamp: 2;
+      -webkit-box-orient: vertical;
+      overflow: hidden;
+    }
+
+    .textBtn {
+      background: transparent;
+      color: var(--main);
+      font-size: 13px;
+      font-weight: 950;
+      padding: 7px 0 0;
+    }
+
+    /* 留言模版 */
+    .notes {
+      display: grid;
+      gap: 8px;
+      margin-top: 12px;
+    }
+
+    .note {
+      background: #f8fafc;
+      border: 1px solid #edf2f7;
+      border-radius: 16px;
+      padding: 10px;
+    }
+
+    .noteTop {
+      display: flex;
+      justify-content: space-between;
+      gap: 8px;
+      color: var(--muted);
+      font-size: 12px;
+      font-weight: 900;
+      margin-bottom: 5px;
+    }
+
+    .tag {
+      border-radius: 999px;
+      padding: 4px 8px;
+      font-size: 11px;
+      font-weight: 950;
+      background: #eef2ff;
+      color: #4f46e5;
+    }
+
+    .noteText {
+      font-size: 14px;
+      line-height: 1.45;
+      white-space: pre-wrap;
+    }
+
+    .say {
+      display: grid;
+      grid-template-columns: 1fr 58px;
+      gap: 7px;
+      margin-top: 12px;
+    }
+
+    .say input {
+      height: 40px;
+      border: 1px solid var(--line);
+      border-radius: 14px;
+      padding: 0 9px;
+      min-width: 0;
+      background: white;
+    }
+
+    .say button {
+      border-radius: 14px;
+      background: var(--main);
+      color: white;
+      font-weight: 950;
+    }
+
+    /* 歷史日誌區 */
+    .log {
+      max-height: 55vh;
+      overflow-y: auto;
+      background: #0f172a;
+      color: #e2e8f0;
+      border-radius: 18px;
+      padding: 12px;
+      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+      font-size: 12px;
+      line-height: 1.55;
+      white-space: pre-wrap;
+    }
+
+    .empty {
+      display: none;
+      background: rgba(255, 255, 255, .82);
+      border: 1px dashed var(--line);
+      border-radius: 22px;
+      padding: 28px 16px;
+      text-align: center;
+      color: var(--muted);
+      font-weight: 850;
+    }
+
+    .empty.show {
+      display: block;
+    }
+
+    /* 浮動按鈕與底欄 */
+    .fab {
+      position: absolute;
+      right: 18px;
+      bottom: calc(84px + var(--bottom));
+      z-index: 26;
+      width: 58px;
+      height: 58px;
+      border-radius: 22px;
+      background: var(--main);
+      color: white;
+      font-size: 30px;
+      font-weight: 900;
+      box-shadow: 0 12px 28px rgba(15, 118, 110, .35);
+    }
+
+    .bottomNav {
+      position: absolute;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      z-index: 25;
+      background: rgba(255, 255, 255, .94);
+      backdrop-filter: blur(18px);
+      border-top: 1px solid var(--line);
+      padding: 8px 10px calc(8px + var(--bottom));
+      display: grid;
+      grid-template-columns: repeat(5, 1fr);
+      gap: 6px;
+    }
+
+    .navBtn {
+      height: 54px;
+      border-radius: 18px;
+      background: transparent;
+      color: var(--muted);
+      font-size: 11px;
+      font-weight: 950;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 2px;
+    }
+
+    .navBtn b {
+      font-size: 18px;
+      line-height: 1;
+    }
+
+    .navBtn.on {
+      background: #e7f5f2;
+      color: var(--main);
+    }
+
+    .navBtn.danger {
+      color: var(--red);
+    }
+
+    .navBtn.manage {
+      color: var(--purple);
+    }
+
+    /* Bottom Sheet 面板結構 */
+    .sheetMask, .confirmMask {
+      position: absolute;
+      inset: 0;
+      background: rgba(15, 23, 42, .34);
+      z-index: 40;
+      display: none;
+    }
+
+    .sheetMask.show, .confirmMask.show {
+      display: block;
+    }
+
+    .sheet {
+      position: absolute;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: white;
+      border-top-left-radius: 28px;
+      border-top-right-radius: 28px;
+      padding: 10px 16px calc(16px + var(--bottom));
+      box-shadow: 0 -18px 38px rgba(15, 23, 42, .22);
+      transform: translateY(105%);
+      transition: .22s ease;
+      z-index: 41;
+    }
+
+    .sheet.show {
+      transform: translateY(0);
+    }
+
+    .handle {
+      width: 44px;
+      height: 5px;
+      background: #d1dbe6;
+      border-radius: 999px;
+      margin: 0 auto 12px;
+    }
+
+    .sheet h2 {
+      margin: 0 0 10px;
+      font-size: 20px;
+    }
+
+    .form {
+      display: grid;
+      gap: 10px;
+    }
+
+    .form input, .form textarea {
+      border: 1px solid var(--line);
+      border-radius: 18px;
+      padding: 12px 14px;
+    }
+
+    .form input {
+      height: 52px;
+    }
+
+    .form textarea {
+      min-height: 120px;
+      resize: vertical;
+      line-height: 1.5;
+    }
+
+    .hint {
+      font-size: 12px;
+      color: var(--muted);
+      font-weight: 750;
+    }
+
+    .sheetActions {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+    }
+
+    .sheetActions button {
+      height: 48px;
+      border-radius: 17px;
+      font-weight: 950;
+    }
+
+    .cancel {
+      background: #f1f5f9;
+      color: #475569;
+    }
+
+    .submit {
+      background: var(--main);
+      color: white;
+    }
+
+    /* 確認對話盒 */
+    .confirmBox {
+      position: absolute;
+      left: 18px;
+      right: 18px;
+      top: 50%;
+      transform: translateY(-50%);
+      z-index: 45;
+      background: white;
+      border-radius: 26px;
+      padding: 18px;
+      box-shadow: 0 18px 48px rgba(15, 23, 42, .26);
+      display: none;
+    }
+
+    .confirmBox.show {
+      display: block;
+    }
+
+    .confirmBox h2 {
+      margin: 0 0 8px;
+      font-size: 21px;
+    }
+
+    .confirmBox p {
+      margin: 0 0 14px;
+      color: var(--muted);
+      line-height: 1.5;
+      font-weight: 800;
+    }
+
+    .confirmActions {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+    }
+
+    .confirmActions button {
+      height: 48px;
+      border-radius: 17px;
+      font-weight: 950;
+    }
+
+    .confirmNo {
+      background: #f1f5f9;
+      color: #475569;
+    }
+
+    .confirmYes {
+      background: var(--main);
+      color: white;
+    }
+
+    .confirmYes.danger {
+      background: var(--red);
+    }
+
+    /* Toast 提示 */
+    .toast {
+      position: absolute;
+      left: 14px;
+      right: 14px;
+      bottom: calc(92px + var(--bottom));
+      z-index: 60;
+      background: rgba(15, 23, 42, .94);
+      color: white;
+      border-radius: 999px;
+      padding: 13px 16px;
+      text-align: center;
+      font-size: 14px;
+      font-weight: 900;
+      display: none;
+    }
+
+    .toast.show {
+      display: block;
+    }
+  </style>
+</head>
+<body>
+<div class="phone">
+  
+  <!-- 1. 防禦性未授權登入畫面 -->
+  <div id="loginScreen" class="login-screen">
+    <div class="brand-box">
+      <svg class="app-logo" width="100" height="100" viewBox="0 0 512 512">
+        <rect width="512" height="512" rx="112" fill="#0f766e"/>
+        <path d="M132 170h248M132 256h188M132 342h248" stroke="#fff" stroke-width="38" stroke-linecap="round"/>
+        <circle cx="376" cy="256" r="46" fill="#14b8a6"/>
+      </svg>
+      <h1>大家的卡片</h1>
+      <p>手勢手機 PWA 卡片池協作系統</p>
+      <button id="loginBtn" class="google-btn">使用 Google 帳號登入</button>
+    </div>
+  </div>
+
+  <!-- 2. 已授權主應用程式畫面 -->
+  <div id="mainApp" style="display: none; flex: 1; flex-direction: column; overflow: hidden;">
+    <header class="appbar">
+      <div class="appbarTop">
+        <div class="brand">
+          <h1>大家的卡片</h1>
+          <p>共同任務，完成與收起需先行確認。</p>
+        </div>
+        <div class="user-profile">
+          <span id="userBadge" class="mode">載入中</span>
+          <button id="logoutBtn" class="logout-btn">登出</button>
+        </div>
+      </div>
+    </header>
+
+    <main class="content" id="content">
+      <section class="panel stats" id="stats">
+        <!-- 由 ui.js 動態填充狀態數字 -->
+      </section>
+
+      <div class="sectionTitle">
+        <strong id="listTitle">全部卡片</strong>
+        <span id="count">0 張</span>
+      </div>
+
+      <section id="cards" class="cards">
+        <!-- 由 ui.js 動態填寫卡片列表 -->
+      </section>
+
+      <section id="records" class="log" hidden>
+        <!-- 由 ui.js 動態填寫 log -->
+      </section>
+
+      <section id="empty" class="empty">
+        目前無任何卡片。
+      </section>
+    </main>
+
+    <!-- 浮動按鈕 -->
+    <button id="fab" class="fab" aria-label="新增卡片">＋</button>
+    
+    <!-- 底部導覽列 -->
+    <nav id="bottomNav" class="bottomNav">
+      <!-- 由 ui.js 動態渲染按鈕 -->
+    </nav>
+  </div>
+
+  <!-- 3. Bottom Sheet 面板 -->
+  <div id="mask" class="sheetMask"></div>
+  <section id="sheet" class="sheet">
+    <div class="handle"></div>
+    <h2>新增卡片</h2>
+    <form id="newCard" class="form">
+      <input id="newTitle" maxlength="40" autocomplete="off" placeholder="卡片名稱：這張卡片要做什麼？(必填)" required>
+      <textarea id="newBody" maxlength="500" placeholder="內容說明：補充執行步驟、想法、條件或驗收標準。最多 500 字。"></textarea>
+      <div class="hint" id="counter">卡片名稱最多 40 字；內容說明最多 500 字。</div>
+      <div class="sheetActions">
+        <button type="button" id="cancel" class="cancel">取消</button>
+        <button type="submit" class="submit">新增</button>
+      </div>
+    </form>
+  </section>
+
+  <!-- 4. 行動確認對話盒 -->
+  <div id="confirmMask" class="confirmMask"></div>
+  <section id="confirmBox" class="confirmBox">
+    <h2 id="confirmTitle">確認完成</h2>
+    <p id="confirmText">要把「卡片名稱」標記為完成嗎？</p>
+    <div class="confirmActions">
+      <button id="confirmNo" class="confirmNo">取消</button>
+      <button id="confirmYes" class="confirmYes">確認</button>
+    </div>
+  </section>
+
+  <!-- 5. Toast 提示盒 -->
+  <div id="toast" class="toast"></div>
+
+</div>
+
+<!-- 引用主程式模組 -->
+<script type="module" src="src/app.js"></script>
+</body>
+</html>
