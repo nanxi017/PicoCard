@@ -1,5 +1,5 @@
-// - 核心理由：PWA 主引導控制，負責協調全域 Auth 狀態（含非白名單拒絕提示）、訂閱生命週期管理及 PWA 註冊。
-// - 權責邊界：[負責] 綁定 index.html DOM 點擊事件、註冊 PWA sw.js、清理/重建 Firestore 監聽與攔截並顯示白名單錯誤。 [不負責] 核心商業判定與 DOM 片段生成。
+// - 核心理由：PWA 應用程式引導與生命週期管理器，此版本全面移除了 FAB 浮動按鈕的點擊綁定，改為由 ui.js 中鍵與頂部 App Bar 說明按鈕事件進行驅動。
+// - 權責邊界：[負責] 協調 Auth、Firestore 訂閱與 UI 觸發；註冊 PWA sw.js。 [不負責] 核心商業判定與 DOM 片段生成。
 // - MWE：在 index.html 載入後，配合 DOM 元素與修補版 Firebase 模組自動初始化。
 // - 致命錯誤邊界：切換分頁或登出時，若未徹底退訂（unsubscribe）舊監聽，將會造成資料流重疊與讀取次數飆升；此處採用單一 unsub 結構並在 auth 變更時主動清空，風險受控。
 
@@ -25,7 +25,7 @@ let unsubCards = null;
 let unsubLogs = null;
 
 /**
- * 退訂所有 Firestore 即時連線，防止記憶體與計費次數洩漏
+ * 徹底退訂所有 Firestore 即時連線，防止記憶體與計費次數洩漏
  */
 function cleanupSubscriptions() {
   if (unsubCards) {
@@ -65,7 +65,7 @@ function setupSubscriptions() {
     });
   } else {
     // 預設 "all" 或 "mine" 均訂閱 active 狀態卡片 (ended == false)
-    // 利用同一組即時連線，UI 透過記憶體過濾我建立的卡片，節省 50% 的 Firestore 讀取量！
+    // 藉由同一組即時連線，UI 透過記憶體過濾我建立的卡片，節省 50% 的 Firestore 讀取量！
     unsubCards = subscribeCards("all", user.uid, (cardsList) => {
       setCards(cardsList);
       renderStats();
@@ -101,8 +101,15 @@ function bindDOMEvents() {
     }
   };
 
+  // 💡 方案 A 改進：全域頂部說明按鈕點擊事件綁定
+  dom.infoBtn.onclick = () => {
+    const roleText = appState.currentUserDoc?.role === "manage" 
+      ? "管理權限：可以建立卡片、收起任意卡片，並恢復已被收起的卡片。" 
+      : "協作權限：可以建立卡片、對任意卡片留言協作，並將自己建立的卡片標記為完成或收起。";
+    showToast(roleText);
+  };
+
   // 新增卡片面板開關與遮罩綁定
-  dom.fab.onclick = () => openSheet();
   dom.cancel.onclick = () => closeSheet();
   dom.mask.onclick = () => closeSheet();
 
