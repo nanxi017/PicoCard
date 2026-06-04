@@ -129,11 +129,15 @@ export function renderAuthStates() {
  * 渲染統計資訊
  */
 export function renderStats() {
-  // 基於單一訂閱集合 cards 計算
-  const totalActive = appState.cards.filter(c => c.state === "open" && c.life === "open").length;
-  const totalMine = appState.cards.filter(c => c.state === "open" && c.life === "open" && c.createdBy === appState.currentUser?.uid).length;
-  const totalDone = appState.cards.filter(c => c.state === "done" && c.life === "open").length;
-  const totalPutaway = appState.cards.filter(c => c.life === "putaway").length;
+  // 統計必須使用全域資料集 appState.cards。
+  // 禁止使用目前頁籤篩選後的 renderList，避免切到「已結束」後污染「待處理 / 我建立」統計。
+  const source = appState.cards;
+  const uid = appState.currentUser?.uid;
+
+  const totalActive = source.filter(c => c.state === "open" && c.life === "open").length;
+  const totalMine = source.filter(c => c.state === "open" && c.life === "open" && c.createdBy === uid).length;
+  const totalDone = source.filter(c => c.state === "done" && c.life === "open").length;
+  const totalPutaway = source.filter(c => c.life === "putaway").length;
 
   dom.stats.innerHTML = `
     <div class="stat"><b>${totalActive}</b><span>待處理</span></div>
@@ -155,14 +159,23 @@ function releaseNoteListeners() {
  * 主卡片池渲染器
  */
 export function renderCards() {
+  // 卡片頁負責卡片容器；避免「紀錄」頁殘留污染卡片分頁
+  dom.records.hidden = true;
+  dom.records.textContent = "";
+
   // 先釋放舊留言監聽
   releaseNoteListeners();
   dom.cards.innerHTML = "";
 
-  // 依據頁籤過濾卡片
+  // 依據頁籤過濾卡片。
+  // 注意：統計使用全域 appState.cards；只有列表 renderList 能被頁籤篩選。
   let renderList = [...appState.cards];
   if (appState.currentTab === "mine") {
     renderList = renderList.filter(c => c.state === "open" && c.life === "open" && c.createdBy === appState.currentUser?.uid);
+  } else if (appState.currentTab === "ended") {
+    renderList = renderList.filter(c => c.ended === true || c.state === "done" || c.life === "putaway");
+  } else {
+    renderList = renderList.filter(c => c.state === "open" && c.life === "open");
   }
 
   // 設定標題與計數
@@ -380,6 +393,11 @@ export function renderCards() {
  * 歷史日誌紀錄渲染
  */
 export function renderLogs() {
+  // 紀錄頁負責紀錄容器；避免前一個卡片分頁的空狀態、選取狀態與留言監聽殘留
+  releaseNoteListeners();
+  appState.selectedCardId = null;
+  dom.empty.classList.remove("show");
+
   dom.listTitle.textContent = "系統操作紀錄";
   dom.count.textContent = `${appState.logs.length} 筆`;
   dom.cards.innerHTML = "";
@@ -522,13 +540,16 @@ export function renderBottomNav() {
 
         if (tabId === "logs") {
           dom.cards.innerHTML = "";
+          dom.records.textContent = "載入系統操作紀錄中...";
           dom.records.hidden = false;
-          renderLogs();
+          dom.empty.classList.remove("show");
         } else {
           dom.records.hidden = true;
-          // 重建對應分頁的即時訂閱 (由 app.js 監聽並管理)
-          window.dispatchEvent(new CustomEvent("tab-changed", { detail: tabId }));
+          dom.records.textContent = "";
         }
+
+        // 所有分頁都必須交由 app.js 重建即時訂閱；UI 不直接推測資料來源
+        window.dispatchEvent(new CustomEvent("tab-changed", { detail: tabId }));
       };
 
       dom.bottomNav.appendChild(b);
