@@ -70,7 +70,10 @@
     .phone {
       width: 100%;
       max-width: 430px;
-      min-height: 100dvh;
+      height: 100vh;
+      height: 100svh;
+      min-height: 100vh;
+      min-height: 100svh;
       background: var(--bg);
       position: relative;
       overflow: hidden;
@@ -83,8 +86,8 @@
       .phone {
         margin: 16px 0;
         border-radius: 34px;
-        min-height: calc(100dvh - 32px);
-        height: calc(100dvh - 32px);
+        min-height: calc(100svh - 32px);
+        height: calc(100svh - 32px);
       }
     }
 
@@ -142,78 +145,98 @@
       background: #f8fafc;
     }
 
-    /* 導覽列與標題 */
-    .appbar {
-      position: sticky;
-      top: 0;
-      z-index: 20;
-      background: linear-gradient(180deg, var(--main) 0%, var(--main-dark) 100%);
-      color: white;
-      padding: calc(14px + var(--top)) 16px 14px;
-      border-bottom-left-radius: 24px;
-      border-bottom-right-radius: 24px;
-      box-shadow: 0 8px 22px rgba(15, 118, 110, .25);
+    /* 單一 PWA App Shell：頂部固定區不參與內容滾動 */
+    .appShell {
+      flex: 1;
+      min-height: 0;
+      height: 100%;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+      background: var(--bg);
     }
 
-    .appbarTop {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      gap: 12px;
+    .topDock {
+      flex: 0 0 auto;
+      position: relative;
+      z-index: 20;
+      background: rgba(238, 246, 255, .98);
+      color: var(--text);
+      padding: calc(10px + var(--top)) 12px 10px;
+      border-bottom-left-radius: 22px;
+      border-bottom-right-radius: 22px;
+      border: 1px solid rgba(219, 229, 238, .92);
+      border-top: 0;
+      box-shadow: 0 8px 22px rgba(16, 32, 51, .12);
+    }
+
+    .topRow {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) auto;
+      align-items: start;
+      gap: 10px;
+      margin-bottom: 9px;
     }
 
     .brand h1 {
       margin: 0;
-      font-size: 22px;
+      font-size: 20px;
+      line-height: 1.12;
       font-weight: 950;
+      color: var(--text);
+      word-break: keep-all;
     }
 
     .brand p {
       margin: 4px 0 0;
-      font-size: 11px;
+      font-size: 12px;
       line-height: 1.35;
-      color: rgba(255, 255, 255, .82);
-      font-weight: 800;
+      color: var(--muted);
+      font-weight: 850;
     }
 
-    .user-profile-row {
+    .identityRow {
       display: flex;
       align-items: center;
-      gap: 10px;
-    }
-
-    .user-profile {
-      display: flex;
-      flex-direction: column;
-      align-items: flex-end;
-      gap: 4px;
+      justify-content: flex-end;
+      gap: 6px;
+      min-width: 0;
+      flex-wrap: wrap;
     }
 
     .mode {
-      background: rgba(255, 255, 255, .15);
-      border: 1px solid rgba(255, 255, 255, .3);
+      max-width: 180px;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      background: var(--main);
+      border: 1px solid rgba(15, 118, 110, .45);
       color: white;
       border-radius: 999px;
-      padding: 4px 8px;
-      font-size: 11px;
+      padding: 6px 9px;
+      font-size: 12px;
       font-weight: 950;
       white-space: nowrap;
+      box-shadow: 0 2px 8px rgba(15, 118, 110, .20);
     }
 
     .logout-btn {
-      background: transparent;
-      color: rgba(255, 255, 255, 0.7);
-      font-size: 11px; /* 稍微放大登出鈕 */
-      font-weight: 800;
-      padding: 2px 4px;
-      text-decoration: underline;
+      min-height: 32px;
+      border-radius: 999px;
+      background: white;
+      border: 1px solid var(--line);
+      color: var(--text);
+      font-size: 12px;
+      font-weight: 900;
+      padding: 4px 9px;
+      text-decoration: none;
+      box-shadow: 0 2px 8px rgba(16, 32, 51, .06);
     }
 
     /* 頂部整合說明按鈕 */
     .info-btn {
-      background: rgba(255, 255, 255, .12);
-      border: 1px solid rgba(255, 255, 255, .3);
-      color: white;
+      background: white;
+      border: 1px solid var(--line);
+      color: var(--text);
       width: 32px;
       height: 32px;
       border-radius: 50%;
@@ -222,17 +245,22 @@
       justify-content: center;
       font-size: 14px;
       font-weight: 950;
+      box-shadow: 0 2px 8px rgba(16, 32, 51, .06);
     }
 
-    .info-btn:active {
-      background: rgba(255, 255, 255, .25);
+    .info-btn:active,
+    .logout-btn:active {
+      background: #f8fafc;
     }
 
     /* 內容捲動區 */
     .content {
-      flex: 1;
+      flex: 1 1 auto;
+      min-height: 0;
       overflow-y: auto;
-      padding: 12px 12px calc(104px + var(--bottom));
+      -webkit-overflow-scrolling: touch;
+      overscroll-behavior: contain;
+      padding: 12px 12px calc(16px + var(--bottom));
       scrollbar-width: none;
     }
 
@@ -477,19 +505,11 @@
       display: block;
     }
 
-    /* 底欄 */
-    .bottomNav {
-      position: absolute;
-      left: 0;
-      right: 0;
-      bottom: 0;
-      z-index: 25;
-      background: rgba(255, 255, 255, .94);
-      backdrop-filter: blur(18px);
-      border-top: 1px solid var(--line);
-      padding: 8px 10px calc(8px + var(--bottom));
+    /* 主操作導覽列：固定於 topDock 內，不使用底部絕對定位 */
+    .primaryNav {
+      width: 100%;
       display: grid;
-      grid-template-columns: repeat(5, 1fr);
+      grid-template-columns: repeat(5, minmax(0, 1fr));
       gap: 6px;
     }
 
@@ -713,7 +733,7 @@
       position: absolute;
       left: 14px;
       right: 14px;
-      bottom: calc(92px + var(--bottom));
+      bottom: calc(18px + var(--bottom));
       z-index: 60;
       background: rgba(15, 23, 42, .94);
       color: white;
@@ -728,6 +748,61 @@
     .toast.show {
       display: block;
     }
+
+    @media (max-width: 480px) {
+      .phone {
+        max-width: none;
+        border-radius: 0;
+      }
+
+      .topDock {
+        padding: calc(8px + var(--top)) 10px 8px;
+        border-bottom-left-radius: 18px;
+        border-bottom-right-radius: 18px;
+      }
+
+      .topRow {
+        grid-template-columns: 1fr;
+        gap: 7px;
+        margin-bottom: 8px;
+      }
+
+      .identityRow {
+        justify-content: flex-start;
+      }
+
+      .brand h1 {
+        font-size: 19px;
+      }
+
+      .brand p {
+        font-size: 12px;
+      }
+
+      .mode {
+        max-width: min(230px, 64vw);
+      }
+
+      .primaryNav {
+        gap: 5px;
+      }
+
+      .navBtn {
+        height: 44px;
+        min-width: 0;
+        border-radius: 14px;
+        font-size: 10.5px;
+      }
+
+      .navBtn b {
+        font-size: 19px;
+      }
+
+      .content {
+        padding: 10px 10px calc(14px + var(--bottom));
+      }
+    }
+
   </style>
 </head>
 <body>
@@ -748,22 +823,22 @@
   </div>
 
   <!-- 已授權主應用程式畫面 -->
-  <div id="mainApp" style="display: none; flex: 1; flex-direction: column; overflow: hidden;">
-    <header class="appbar">
-      <div class="appbarTop">
+  <div id="mainApp" class="appShell" style="display: none;">
+    <header id="topDock" class="topDock">
+      <div class="topRow">
         <div class="brand">
           <h1>一起辦｜卡片協作工具</h1>
           <p>共同任務，完成與收起需先行確認。</p>
         </div>
-        <div class="user-profile-row">
-          <div class="user-profile">
-            <span id="userBadge" class="mode">載入中</span>
-            <button id="logoutBtn" class="logout-btn">登出</button>
-          </div>
-          <!-- 全域說明按鈕整合至 App Bar -->
+        <div class="identityRow">
+          <span id="userBadge" class="mode">載入中</span>
           <button id="infoBtn" class="info-btn" aria-label="系統說明">ℹ️</button>
+          <button id="logoutBtn" class="logout-btn">登出</button>
         </div>
       </div>
+      <nav id="bottomNav" class="primaryNav" aria-label="主要操作">
+        <!-- 由 ui.js 動態渲染按鈕 -->
+      </nav>
     </header>
 
     <main class="content" id="content">
@@ -788,11 +863,7 @@
         目前無任何卡片。
       </section>
     </main>
-    
-    <!-- 主操作導覽列：由 ui.js 搬入頂部固定控制區 -->
-    <nav id="bottomNav" class="bottomNav">
-      <!-- 由 ui.js 動態渲染按鈕 -->
-    </nav>
+
   </div>
 
   <!-- Bottom Sheet 面板 -->
