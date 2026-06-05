@@ -5,7 +5,7 @@
 
 import { auth, db, googleProvider } from "./firebase.js";
 import { signInWithPopup, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
-import { doc, getDoc, updateDoc } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+import { doc, getDoc, setDoc, updateDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
 
 /**
  * 啟動 Google Popup 授權登入
@@ -56,11 +56,21 @@ export function listenAuth(onUserUpdate) {
     try {
       let userSnap = await getDoc(userRef);
 
-      // 1. 檢查是否在白名單內
+      // 1. 檢查是否在使用者清單內；若不存在，建立待審核帳號後拒絕本次進入
       if (!userSnap.exists()) {
-        console.warn(`Auth: Denied. Email ${email} is not on the whitelist.`);
+        console.log(`Auth: First-time applicant. Creating pending user document for ${email}.`);
+        await setDoc(userRef, {
+          email: email,
+          displayName: firebaseUser.displayName || "協作者",
+          role: "user",
+          active: false,
+          uid: "",
+          createdAt: serverTimestamp(),
+          updatedAt: serverTimestamp(),
+          requestSource: "google_login"
+        });
         await logout();
-        onUserUpdate(null, null, "您不在系統授權白名單中，請聯絡管理員手動新增您的信箱。");
+        onUserUpdate(null, null, "已建立使用申請，請等待管理者啟用帳號。");
         return;
       }
 
@@ -70,7 +80,7 @@ export function listenAuth(onUserUpdate) {
       if (userData.active !== true) {
         console.warn(`Auth: Denied. Email ${email} is deactivated.`);
         await logout();
-        onUserUpdate(null, null, "您的帳號已被停用，請聯絡管理員。");
+        onUserUpdate(null, null, "帳號尚未啟用，請等待管理者啟用。");
         return;
       }
 
@@ -81,7 +91,8 @@ export function listenAuth(onUserUpdate) {
         // 綁定當前用戶的 UID 與 姓名
         await updateDoc(userRef, {
           uid: firebaseUser.uid,
-          displayName: firebaseUser.displayName || userData.displayName || "協作者"
+          displayName: firebaseUser.displayName || userData.displayName || "協作者",
+          updatedAt: serverTimestamp()
         });
 
         // 重新讀取，確保更新反映至本機狀態
