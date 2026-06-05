@@ -29,8 +29,9 @@ import {
 export function subscribeCards(filter, userId, callback) {
   const cardsRef = collection(db, "cards");
 
-  // 已結束頁是歷史資料入口，必須由 Firestore 查詢層限制最新 30 筆，
-  // 禁止先訂閱全量歷史卡片再交給 UI 篩選，避免讀取流量風暴。
+  // 後端查詢層負責限制資料讀取量：
+  // - 已結束頁只訂閱 ended == true 的最新 30 筆，避免歷史資料全量讀取風暴。
+  // - 全部與我建立頁只訂閱 ended == false 的未結束卡片，不再混入歷史卡片。
   const q = filter === "ended"
     ? query(
         cardsRef,
@@ -40,6 +41,7 @@ export function subscribeCards(filter, userId, callback) {
       )
     : query(
         cardsRef,
+        where("ended", "==", false),
         orderBy("updatedAt", "desc")
       );
 
