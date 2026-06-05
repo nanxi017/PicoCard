@@ -1,21 +1,21 @@
 <!--
-- 核心理由：App 主入口。已整合「中鍵新增 ➕」、「頂部說明鈕」，並套用 10%~15% 黃金字體放大比例，提升行動裝置閱讀性與防 iOS 縮放。
-- 權責邊界：[負責] 結構宣告、高保真響應式配置、與安全極限字體尺寸。 [不負責] 狀態管理與動態事件處理。
-- MWE：直接雙擊或在本地靜態伺服器開啟，完全覆蓋舊版。
-- 致命錯誤邊界：風險受控。
+- 核心理由：App 主入口。已整合「中鍵新增 ➪」、 「頂部說明按鈕」，並套用 10%~15% 黃金字體放大比例，提升行動裝置配置阻尼感與防 iOS 縮放。
+- 職責邊界：[負責] 結構宣告、高保真音效式配置、安全權限字體對齊。 [不負責] 狀態管理與動態事件處理。
+- MWE：直接雙擊或在本地面板伺服器開啟，完全瀏覽器版本。
+- 致命錯誤邊界：防重複受控。
 -->
 <!doctype html>
 <html lang="zh-Hant-TW">
 <head>
   <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
   <meta name="theme-color" content="#0f766e">
   <meta name="mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-capable" content="yes">
-  <meta name="apple-mobile-web-app-title" content="一起辦｜卡片協作工具">
+  <meta name="apple-mobile-web-app-title" content="一起辦｜卡牌協作工具">
   <link rel="manifest" href="manifest.webmanifest">
   <link rel="apple-touch-icon" href="assets/icon.svg">
-  <title>一起辦｜卡片協作工具</title>
+  <title>一起辦｜卡牌協作工具</title>
   <style>
     :root {
       --main: #0f766e;
@@ -145,7 +145,7 @@
       background: #f8fafc;
     }
 
-    /* 單一 PWA App Shell：頂部固定區不參與內容滾動 */
+    /* 主應用 Shell */
     .appShell {
       flex: 1;
       min-height: 0;
@@ -232,7 +232,6 @@
       box-shadow: 0 2px 8px rgba(16, 32, 51, .06);
     }
 
-    /* 頂部整合說明按鈕 */
     .info-btn {
       background: white;
       border: 1px solid var(--line);
@@ -253,6 +252,121 @@
       background: #f8fafc;
     }
 
+    /* 主要操作導覽按鈕區 (統一樣式 - 深對比高立體感設計) */
+    .primaryNav {
+      width: 100%;
+      display: grid;
+      grid-template-columns: repeat(5, minmax(0, 1fr));
+      gap: 8px; /* 稍微拉大，便於行動端操作點擊 */
+    }
+
+    .navBtn {
+      height: 54px;
+      border-radius: 18px;
+      
+      /* --- 高對比度/立體感設計：未點選狀態 --- */
+      background: #ffffff;
+      border: 2px solid #64748b; /* 明確邊框、高可視度 */
+      color: #334155;            /* 深色清晰字體 */
+      box-shadow: 0 2px 5px rgba(15, 23, 42, 0.1); /* 立體投影 */
+      
+      font-size: 12px;
+      font-weight: 950;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 2px;
+      transition: all 0.15s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    .navBtn b {
+      font-size: 20px;
+      line-height: 1;
+    }
+
+    /* --- 高對比度/立體感設計：選中啟用狀態 (on) --- */
+    .navBtn.on {
+      background: var(--main) !important;
+      border-color: var(--main-dark) !important;
+      color: #ffffff !important;
+      box-shadow: 0 4px 12px rgba(15, 118, 110, 0.3) !important;
+    }
+
+    .navBtn.on b {
+      color: #ffffff !important;
+    }
+
+    /* 按鍵實體回饋 */
+    .navBtn:active {
+      transform: scale(0.94);
+      background: #e2e8f0;
+      border-color: #475569;
+    }
+
+    .navBtn.on:active {
+      transform: scale(0.94);
+      background: var(--main-dark) !important;
+    }
+
+    /* 紅色警告/紫色管理高對比特定樣式 */
+    .navBtn.danger {
+      color: #b91c1c;
+      border-color: #fca5a5;
+      background: #fef2f2;
+    }
+    .navBtn.danger.on {
+      background: var(--red) !important;
+      border-color: #991b1b !important;
+      color: #ffffff !important;
+    }
+
+    .navBtn.manage {
+      color: var(--purple);
+      border-color: #ddd6fe;
+      background: #f5f3ff;
+    }
+    .navBtn.manage.on {
+      background: var(--purple) !important;
+      border-color: #4c1d95 !important;
+      color: #ffffff !important;
+    }
+
+    /* 特殊「新增」按鈕：高對比中鍵視覺 */
+    .navBtn.add-primary {
+      color: var(--main);
+      border-color: var(--main);
+      background: #ffffff;
+    }
+
+    .navBtn.add-primary b {
+      font-size: 24px;
+      background: var(--main);
+      color: white;
+      width: 36px;
+      height: 36px;
+      border-radius: 11px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin-bottom: 1px;
+      box-shadow: 0 4px 10px rgba(15, 118, 110, 0.3);
+      transition: background 0.1s ease;
+    }
+
+    .navBtn.add-primary:active {
+      background: #f0fdfa;
+    }
+
+    .navBtn.add-primary:active b {
+      background: var(--main-dark);
+    }
+
+    /* 強制輸入框於行動端不觸發自動放大縮寫 */
+    .say input, .form input, .form textarea {
+      font-size: 16px !important;
+    }
+
     /* 內容捲動區 */
     .content {
       flex: 1 1 auto;
@@ -268,7 +382,7 @@
       display: none;
     }
 
-    /* 統計面板 */
+    /* 統計面板面板 */
     .panel {
       background: rgba(255, 255, 255, .96);
       border: 1px solid rgba(219, 229, 238, .9);
@@ -294,7 +408,7 @@
 
     .stat b {
       display: block;
-      font-size: 22px; /* 數字放大至 22px */
+      font-size: 22px;
       line-height: 1;
       font-weight: 950;
     }
@@ -303,7 +417,7 @@
       display: block;
       margin-top: 5px;
       color: var(--muted);
-      font-size: 11.5px; /* 標籤放大至 11.5px */
+      font-size: 11.5px;
       font-weight: 900;
       white-space: nowrap;
     }
@@ -318,7 +432,7 @@
       margin: 4px 4px 9px;
     }
 
-    /* 卡片卡池 */
+    /* 卡片與內容樣式 */
     .cards {
       display: grid;
       gap: 12px;
@@ -349,7 +463,7 @@
     }
 
     .title {
-      font-size: 19px; /* 標題放大至 19px */
+      font-size: 19px;
       line-height: 1.35;
       font-weight: 950;
       word-break: break-all;
@@ -381,7 +495,7 @@
     .meta {
       margin-top: 8px;
       color: var(--muted);
-      font-size: 13px; /* 詮釋資料放大至 13px */
+      font-size: 13px;
       line-height: 1.45;
       font-weight: 750;
     }
@@ -390,9 +504,9 @@
       margin-top: 10px;
       background: #f8fafc;
       border-radius: 15px;
-      padding: 12px; /* 內距增加呼吸感 */
+      padding: 12px;
       color: #334155;
-      font-size: 16px; /* 內文放大至 16px 黃金閱讀大小 */
+      font-size: 16px;
       line-height: 1.55;
       white-space: pre-wrap;
       word-break: break-all;
@@ -408,12 +522,12 @@
     .textBtn {
       background: transparent;
       color: var(--main);
-      font-size: 14px; /* 展開按鈕稍微放大 */
+      font-size: 14px;
       font-weight: 950;
       padding: 7px 0 0;
     }
 
-    /* 留言模版 */
+    /* 留言與備忘 */
     .notes {
       display: grid;
       gap: 8px;
@@ -432,7 +546,7 @@
       justify-content: space-between;
       gap: 8px;
       color: var(--muted);
-      font-size: 13px; /* 留言標頭放大至 13px */
+      font-size: 13px;
       font-weight: 900;
       margin-bottom: 5px;
     }
@@ -447,7 +561,7 @@
     }
 
     .noteText {
-      font-size: 15px; /* 留言內容放大至 15px */
+      font-size: 15px;
       line-height: 1.5;
       white-space: pre-wrap;
     }
@@ -475,7 +589,7 @@
       font-weight: 950;
     }
 
-    /* 歷史日誌區 */
+    /* 歷史記錄面板 */
     .log {
       max-height: 55vh;
       overflow-y: auto;
@@ -484,7 +598,7 @@
       border-radius: 18px;
       padding: 12px;
       font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
-      font-size: 13px; /* 日誌稍微放大 */
+      font-size: 13px;
       line-height: 1.55;
       white-space: pre-wrap;
     }
@@ -497,7 +611,7 @@
       padding: 28px 16px;
       text-align: center;
       color: var(--muted);
-      font-size: 14px; /* 空白提示放大 */
+      font-size: 14px;
       font-weight: 850;
     }
 
@@ -505,76 +619,7 @@
       display: block;
     }
 
-    /* 主操作導覽列：固定於 topDock 內，不使用底部絕對定位 */
-    .primaryNav {
-      width: 100%;
-      display: grid;
-      grid-template-columns: repeat(5, minmax(0, 1fr));
-      gap: 6px;
-    }
-
-    .navBtn {
-      height: 54px;
-      border-radius: 18px;
-      background: transparent;
-      color: var(--muted);
-      font-size: 12px; /* 導覽字體放大至不破版極限 12px */
-      font-weight: 950;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      gap: 2px;
-    }
-
-    .navBtn b {
-      font-size: 20px; /* 導覽圖示放大至 20px */
-      line-height: 1;
-    }
-
-    .navBtn.on {
-      background: #e7f5f2;
-      color: var(--main);
-    }
-
-    .navBtn.danger {
-      color: var(--red);
-    }
-
-    .navBtn.manage {
-      color: var(--purple);
-    }
-
-    /* 方案 A 專屬：中鍵新增 ➕ 特殊醒目視覺設計 */
-    .navBtn.add-primary {
-      color: var(--main);
-      font-weight: 950;
-    }
-
-    .navBtn.add-primary b {
-      font-size: 24px; /* 中鍵圖示等比放大 */
-      background: var(--main);
-      color: white;
-      width: 36px;  /* 中鍵框等比放大 */
-      height: 36px;
-      border-radius: 11px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      margin-bottom: 1px;
-      box-shadow: 0 4px 10px rgba(15, 118, 110, 0.3);
-    }
-
-    .navBtn.add-primary:active b {
-      background: var(--main-dark);
-    }
-
-    /* 強制輸入框字體為 16px，防止 iOS 點擊輸入時畫面自動放大 (Auto-zoom) */
-    .say input, .form input, .form textarea {
-      font-size: 16px !important;
-    }
-
-    /* Bottom Sheet 面板結構 */
+    /* Bottom Sheet 與 Mask 面板 */
     .sheetMask, .confirmMask {
       position: absolute;
       inset: 0;
@@ -656,7 +701,7 @@
       height: 48px;
       border-radius: 17px;
       font-weight: 950;
-      font-size: 15px; /* 按鈕文字稍微放大 */
+      font-size: 15px;
     }
 
     .cancel {
@@ -669,7 +714,7 @@
       color: white;
     }
 
-    /* 確認對話盒 */
+    /* 確認對話面板 */
     .confirmBox {
       position: absolute;
       left: 18px;
@@ -697,7 +742,7 @@
       margin: 0 0 14px;
       color: var(--muted);
       line-height: 1.5;
-      font-size: 15px; /* 確認內文放大 */
+      font-size: 15px;
       font-weight: 800;
     }
 
@@ -711,7 +756,7 @@
       height: 48px;
       border-radius: 17px;
       font-weight: 950;
-      font-size: 15px; /* 按鈕文字稍微放大 */
+      font-size: 15px;
     }
 
     .confirmNo {
@@ -728,7 +773,7 @@
       background: var(--red);
     }
 
-    /* Toast 提示 */
+    /* Toast 通知 */
     .toast {
       position: absolute;
       left: 14px;
@@ -757,14 +802,11 @@
       .brand h1 { font-size: 19px; }
       .brand p { font-size: 12px; }
       .mode { max-width: min(230px, 64vw); }
-      .primaryNav { gap: 5px; }
-      .navBtn { height: 44px; min-width: 0; border-radius: 14px; font-size: 10.5px; }
-      .navBtn b { font-size: 19px; }
       .content { padding: 10px 10px calc(14px + var(--bottom)); }
     }
 
 
-    /* 弱視友善大型字級與操作級距：單一 PWA 共用，避免桌機/手機分支 */
+    /* 影響視障/放大字型與操作軌跡：完全整合高對比導覽列樣式 */
     :root {
       --a11y-title: 26px;
       --a11y-subtitle: 19px;
@@ -779,9 +821,19 @@
     .brand p { font-size: var(--a11y-subtitle) !important; line-height: 1.45 !important; }
     .mode, .logout-btn, .info-btn { font-size: var(--a11y-small) !important; min-height: 44px !important; }
     .info-btn { width: 44px !important; height: 44px !important; }
+    
     .primaryNav { gap: 7px !important; }
-    .navBtn { height: 64px !important; min-height: 64px !important; border-radius: 18px !important; font-size: var(--a11y-small) !important; line-height: 1.16 !important; }
+    
+    /* 視障放大模式下的覆寫：僅放大高度與字型，保留基礎的高對比 2px 邊框與選中顏色 */
+    .navBtn { 
+      height: 64px !important; 
+      min-height: 64px !important; 
+      border-radius: 18px !important; 
+      font-size: var(--a11y-small) !important; 
+      line-height: 1.16 !important; 
+    }
     .navBtn b { font-size: 27px !important; line-height: 1 !important; }
+    
     .sectionTitle { font-size: var(--a11y-control) !important; line-height: 1.4 !important; }
     .stat b { font-size: 33px !important; }
     .stat span { font-size: var(--a11y-small) !important; line-height: 1.3 !important; }
@@ -813,9 +865,18 @@
       .topRow { gap: 9px !important; margin-bottom: 10px !important; }
       .brand h1 { word-break: keep-all; }
       .mode { max-width: min(280px, 76vw) !important; }
+      
       .primaryNav { gap: 5px !important; }
-      .navBtn { height: 60px !important; min-height: 60px !important; font-size: 15px !important; border-radius: 16px !important; }
+      
+      /* 行動寬度下縮放，結構保持高對比細節不失真 */
+      .navBtn { 
+        height: 60px !important; 
+        min-height: 60px !important; 
+        font-size: 15px !important; 
+        border-radius: 16px !important; 
+      }
       .navBtn b { font-size: 25px !important; }
+      
       .stats { gap: 6px !important; }
       .stat { padding: 11px 3px !important; }
       .stat b { font-size: 30px !important; }
@@ -829,7 +890,7 @@
 <body>
 <div class="phone">
   
-  <!-- 防禦性未授權登入畫面 -->
+  <!-- 未授權登入畫面 -->
   <div id="loginScreen" class="login-screen">
     <div class="brand-box">
       <svg class="app-logo" width="100" height="100" viewBox="0 0 512 512">
@@ -837,19 +898,19 @@
         <path d="M132 170h248M132 256h188M132 342h248" stroke="#fff" stroke-width="38" stroke-linecap="round"/>
         <circle cx="376" cy="256" r="46" fill="#14b8a6"/>
       </svg>
-      <h1>一起辦｜卡片協作工具</h1>
-      <p>共同任務卡片協作系統</p>
+      <h1>一起辦｜卡牌協作工具</h1>
+      <p>共同任務卡牌協作系統</p>
       <button id="loginBtn" class="google-btn">使用 Google 帳號登入</button>
     </div>
   </div>
 
-  <!-- 已授權主應用程式畫面 -->
+  <!-- 主應用程式頁面 -->
   <div id="mainApp" class="appShell" style="display: none;">
     <header id="topDock" class="topDock">
       <div class="topRow">
         <div class="brand">
-          <h1>一起辦｜卡片協作工具</h1>
-          <p>共同任務，完成與收起需先行確認。</p>
+          <h1>一起辦｜卡牌協作工具</h1>
+          <p>共同任務，完成與收起需優先確認。</p>
         </div>
         <div class="identityRow">
           <span id="userBadge" class="mode">載入中</span>
@@ -864,24 +925,24 @@
 
     <main class="content" id="content">
       <section class="panel stats" id="stats">
-        <!-- 由 ui.js 動態填充狀態數字 -->
+        <!-- 由 ui.js 動態填入統計數據 -->
       </section>
 
       <div class="sectionTitle">
-        <strong id="listTitle">全部卡片</strong>
+        <strong id="listTitle">全部卡牌</strong>
         <span id="count">0 張</span>
       </div>
 
       <section id="cards" class="cards">
-        <!-- 由 ui.js 動態填寫卡片列表 -->
+        <!-- 由 ui.js 動態填入卡牌列表 -->
       </section>
 
       <section id="records" class="log" hidden>
-        <!-- 由 ui.js 動態填寫 log -->
+        <!-- 由 ui.js 動態填入 log -->
       </section>
 
       <section id="empty" class="empty">
-        目前無任何卡片。
+        目前無任何卡牌。
       </section>
     </main>
   </div>
@@ -890,11 +951,11 @@
   <div id="mask" class="sheetMask"></div>
   <section id="sheet" class="sheet">
     <div class="handle"></div>
-    <h2>新增卡片</h2>
+    <h2>新增卡牌</h2>
     <form id="newCard" class="form">
-      <input id="newTitle" maxlength="40" autocomplete="off" placeholder="卡片名稱：這張卡片要做什麼？(必填)" required>
-      <textarea id="newBody" maxlength="500" placeholder="內容說明：補充執行步驟、想法、條件或驗收標準。最多 500 字。"></textarea>
-      <div class="hint" id="counter">卡片名稱最多 40 字；內容說明最多 500 字。</div>
+      <input id="newTitle" maxlength="40" autocomplete="off" placeholder="卡牌名稱：這張卡牌要做什麼？(必填)" required>
+      <textarea id="newBody" maxlength="500" placeholder="內容說明：補充執行步驟、想法、條件或階段性成果。最多 500 字。"></textarea>
+      <div class="hint" id="counter">卡牌名稱最多 40 字；內容說明最多 500 字。</div>
       <div class="sheetActions">
         <button type="button" id="cancel" class="cancel">取消</button>
         <button type="submit" class="submit">新增</button>
@@ -902,18 +963,18 @@
     </form>
   </section>
 
-  <!-- 行動確認對話盒 -->
+  <!-- 行動確認對話框 -->
   <div id="confirmMask" class="confirmMask"></div>
   <section id="confirmBox" class="confirmBox">
     <h2 id="confirmTitle">確認完成</h2>
-    <p id="confirmText">要把「卡片名稱」標記為完成嗎？</p>
+    <p id="confirmText">要將「卡牌名稱」標記為完成嗎？</p>
     <div class="confirmActions">
       <button id="confirmNo" class="confirmNo">取消</button>
       <button id="confirmYes" class="confirmYes">確認</button>
     </div>
   </section>
 
-  <!-- Toast 提示盒 -->
+  <!-- Toast 提示框 -->
   <div id="toast" class="toast"></div>
 
 </div>
