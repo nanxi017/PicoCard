@@ -282,9 +282,7 @@ export function renderCards() {
     ended: "已結束卡片"
   };
   dom.listTitle.textContent = tabTitles[appState.currentTab] || "卡片";
-  dom.count.textContent = appState.currentTab === "ended" && renderList.length >= 30
-    ? "最新 30 張"
-    : `${renderList.length} 張`;
+  dom.count.textContent = `${renderList.length} 張`;
 
   if (renderList.length === 0) {
     dom.empty.classList.add("show");
