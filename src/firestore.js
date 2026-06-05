@@ -22,19 +22,26 @@ import {
 
 /**
  * 監聽卡片集合
- * @param {string} filter 篩選器："all" (全部未結束) | "mine" (我建立的未結束) | "ended" (已結束)
+ * @param {string} filter 篩選器："all" (全部未結束) | "mine" (我建立的未結束) | "ended" (最新 30 筆已結束)
  * @param {string} userId 目前登入的使用者 uid
  * @param {Function} callback 數據更新時的回呼函式 (cards) => {}
  */
 export function subscribeCards(filter, userId, callback) {
   const cardsRef = collection(db, "cards");
 
-  // 統計與全域摘要必須永遠基於完整 cards 集合。
-  // 頁籤分類只應在 UI 的 renderCards() 內做可視列表篩選。
-  const q = query(
-    cardsRef,
-    orderBy("updatedAt", "desc")
-  );
+  // 已結束頁是歷史資料入口，必須由 Firestore 查詢層限制最新 30 筆，
+  // 禁止先訂閱全量歷史卡片再交給 UI 篩選，避免讀取流量風暴。
+  const q = filter === "ended"
+    ? query(
+        cardsRef,
+        where("ended", "==", true),
+        orderBy("updatedAt", "desc"),
+        limit(30)
+      )
+    : query(
+        cardsRef,
+        orderBy("updatedAt", "desc")
+      );
 
   return onSnapshot(q, (snapshot) => {
     const cards = [];
