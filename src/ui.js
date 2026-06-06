@@ -5,7 +5,7 @@
 
 import { appState, isEnded, canComplete, canPutaway, canRestore, canRecallNote, getSelectedCard } from "./state.js";
 import { login, logout } from "./auth.js";
-import { createCard, completeCard, putawayCard, restoreCard, createNote, recallNote, subscribeNotes } from "./firestore.js";
+import { createCard, completeCard, putawayCard, restoreCard, updateCardBody, createNote, recallNote, subscribeNotes } from "./firestore.js";
 
 // ==========================================
 // 1. DOM 節點快取
@@ -99,6 +99,27 @@ function runCardAction(action, card) {
       }
     );
   }
+  if (action === "editBody") {
+    const nextBody = window.prompt("訂正卡片內容（最多 500 字）：", card.body || "");
+    if (nextBody === null) return;
+    const normalizedBody = nextBody.trim();
+    if (normalizedBody.length > 500) {
+      showToast("內容最多 500 字");
+      return;
+    }
+    askConfirm(
+      "確認訂正內容",
+      `要更新「${card.title}」的卡片內容嗎？`,
+      async () => {
+        try {
+          await updateCardBody(card, normalizedBody, appState.currentUser, appState.currentUserDoc);
+          showToast("卡片內容已訂正");
+        } catch (err) {
+          showToast("訂正失敗：" + err.message);
+        }
+      }
+    );
+  }
 }
 
 function buildCardActionDetails(card) {
@@ -111,6 +132,9 @@ function buildCardActionDetails(card) {
   }
   if (canRestore(card, appState.currentUser, appState.currentUserDoc)) {
     actions.push(["恢復", "restore", "manage"]);
+  }
+  if (card.createdBy === appState.currentUser?.uid && card.life === "open") {
+    actions.push(["編輯內容", "editBody", ""]);
   }
   if (actions.length === 0) return null;
 
@@ -144,6 +168,9 @@ const noteUnsubscribers = new Map();
 
 // 展開/收起內文的狀態快取 (CardId -> boolean)
 const expandedBodies = new Set();
+
+// 展開/收合留言的狀態快取 (CardId -> boolean)
+const expandedNotes = new Set();
 
 // ==========================================
 // 2. 基礎彈窗與提示 (Toast / Bottom Sheet / Confirm)
@@ -330,6 +357,11 @@ export function renderCards() {
     metaRow.textContent = `建立：${card.createdByName} ｜ 更新：${formatTime(card.updatedAt)}`;
     cardEl.appendChild(metaRow);
 
+    const lastModifiedRow = document.createElement("div");
+    lastModifiedRow.className = "meta lastModified";
+    lastModifiedRow.textContent = `最後修改：${formatTime(card.updatedAt)}`;
+    cardEl.appendChild(lastModifiedRow);
+
     const cardActions = buildCardActionDetails(card);
     if (cardActions) {
       cardEl.appendChild(cardActions);
@@ -381,9 +413,28 @@ export function renderCards() {
       notesContainer.innerHTML = "";
       if (notesList.length === 0) return;
 
-      // 限制卡片首頁只渲染最新 3 筆非 recalled 留言
       const activeNotes = notesList.filter(n => n.life === "open");
-      const displayNotes = activeNotes.slice(-3);
+      const notesExpanded = expandedNotes.has(card.id);
+      const displayNotes = activeNotes.length <= 2 || notesExpanded
+        ? activeNotes
+        : activeNotes.slice(-2);
+
+      if (activeNotes.length > 2) {
+        const noteToggle = document.createElement("button");
+        noteToggle.type = "button";
+        noteToggle.className = "textBtn notesToggle";
+        noteToggle.textContent = notesExpanded ? "收合留言" : `查看全部 ${activeNotes.length} 則留言`;
+        noteToggle.onclick = (e) => {
+          e.stopPropagation();
+          if (notesExpanded) {
+            expandedNotes.delete(card.id);
+          } else {
+            expandedNotes.add(card.id);
+          }
+          renderCards();
+        };
+        notesContainer.appendChild(noteToggle);
+      }
 
       displayNotes.forEach((note) => {
         const noteEl = document.createElement("div");
