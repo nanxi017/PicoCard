@@ -143,6 +143,35 @@ export async function createCard(title, body, user, userData) {
 }
 
 /**
+ * 編輯卡片最開始的內容（建立者限定，與 Log 綁定交易）
+ */
+export async function updateCardBody(card, body, user, userData) {
+  const batch = writeBatch(db);
+  const cardDocRef = doc(db, "cards", card.id);
+  const logColRef = collection(db, "activityLogs");
+  const logDocRef = doc(logColRef);
+
+  const timestamp = serverTimestamp();
+  const actorName = userData.displayName || user.displayName || "協作者";
+
+  batch.update(cardDocRef, {
+    body: body,
+    updatedAt: timestamp
+  });
+
+  batch.set(logDocRef, {
+    cardId: card.id,
+    actorId: user.uid,
+    actorName: actorName,
+    action: "card_body_updated",
+    text: `訂正了卡片「${card.title}」的內容`,
+    createdAt: timestamp
+  });
+
+  await batch.commit();
+}
+
+/**
  * 標記完成卡片 (建立者限定，與 Log 綁定交易)
  */
 export async function completeCard(card, user, userData) {
