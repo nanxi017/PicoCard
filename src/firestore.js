@@ -156,6 +156,7 @@ export async function updateCardBody(card, body, user, userData) {
 
   batch.update(cardDocRef, {
     body: body,
+    bodyUpdatedAt: timestamp,
     updatedAt: timestamp
   });
 
