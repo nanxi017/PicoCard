@@ -885,6 +885,74 @@
       .body { padding: 14px !important; }
     }
 
+
+    /* 第一版 UI 改善：卡片外框強化、狀態色條、留言區收合控制 */
+    .cards {
+      gap: 16px;
+    }
+
+    .card {
+      border: 2px solid #b7c7d9 !important;
+      box-shadow: 0 14px 30px rgba(15, 23, 42, .13) !important;
+      margin-bottom: 16px !important;
+      overflow: hidden;
+      isolation: isolate;
+    }
+
+    .card::before {
+      content: "";
+      position: absolute;
+      left: 0;
+      top: 16px;
+      bottom: 16px;
+      width: 5px;
+      border-radius: 0 999px 999px 0;
+      background: var(--main);
+    }
+
+    .card.ended::before {
+      background: var(--green);
+    }
+
+    .card:has(.state.putaway)::before {
+      background: #94a3b8;
+    }
+
+    .cardTop,
+    .meta,
+    .body,
+    .textBtn,
+    .notes,
+    .say,
+    .cardActionDetails {
+      position: relative;
+      z-index: 1;
+    }
+
+    .lastModified {
+      margin-top: 3px;
+      font-size: 12.5px;
+      color: #516783;
+    }
+
+    .notes {
+      border-top: 1px solid #d8e4f0;
+      padding-top: 10px;
+    }
+
+    .note {
+      background: #f8fafc;
+      border: 1px solid #d9e4ef;
+      box-shadow: 0 2px 8px rgba(15, 23, 42, .035);
+    }
+
+    .notesToggle {
+      width: 100%;
+      padding: 8px 0 4px;
+      text-align: left;
+      color: var(--main-dark);
+    }
+
   </style>
 </head>
 <body>
