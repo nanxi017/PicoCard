@@ -354,12 +354,12 @@ export function renderCards() {
     // 詮釋資料
     const metaRow = document.createElement("div");
     metaRow.className = "meta";
-    metaRow.textContent = `建立：${card.createdByName} ｜ 更新：${formatTime(card.updatedAt)}`;
+    metaRow.textContent = `建立：${card.createdByName} ｜ 建立時間：${formatTime(card.createdAt)}`;
     cardEl.appendChild(metaRow);
 
     const lastModifiedRow = document.createElement("div");
     lastModifiedRow.className = "meta lastModified";
-    lastModifiedRow.textContent = `最後修改：${formatTime(card.updatedAt)}`;
+    lastModifiedRow.textContent = `最後修改：${formatTime(card.bodyUpdatedAt || card.createdAt)}`;
     cardEl.appendChild(lastModifiedRow);
 
     const cardActions = buildCardActionDetails(card);
